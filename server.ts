@@ -7,16 +7,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DATA_DIR = path.join(__dirname, 'data');
-const DB_FILE = path.join(DATA_DIR, 'database.json');
+const USERS_DIR = path.join(DATA_DIR, 'users');
+const DEFAULT_DB_FILE = path.join(DATA_DIR, 'database.json');
 
-// Ensure data directory exists
+// Ensure data directories exist
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+if (!fs.existsSync(USERS_DIR)) {
+  fs.mkdirSync(USERS_DIR, { recursive: true });
 }
 
 interface ServerDatabase {
   version: number;
   lastUpdated: string;
+  ownerEmail?: string;
   settings: Record<string, any>;
   tables: {
     orders: any[];
@@ -65,62 +70,83 @@ const DEFAULT_SERVER_DB: ServerDatabase = {
 };
 
 class ServerStorage {
-  private db: ServerDatabase;
+  private userDbs: Map<string, ServerDatabase> = new Map();
+  private defaultDb: ServerDatabase;
 
   constructor() {
-    this.db = this.load();
+    this.defaultDb = this.loadDbFile(DEFAULT_DB_FILE);
   }
 
-  private load(): ServerDatabase {
+  private sanitizeEmail(email: string): string {
+    return (email || 'default').toLowerCase().replace(/[^a-z0-9._-]/g, '_');
+  }
+
+  private getUserDbPath(email: string): string {
+    return path.join(USERS_DIR, `${this.sanitizeEmail(email)}.json`);
+  }
+
+  private loadDbFile(filePath: string): ServerDatabase {
     try {
-      if (fs.existsSync(DB_FILE)) {
-        const raw = fs.readFileSync(DB_FILE, 'utf-8');
+      if (fs.existsSync(filePath)) {
+        const raw = fs.readFileSync(filePath, 'utf-8');
         const parsed = JSON.parse(raw);
         if (parsed && parsed.tables) {
           return parsed;
         }
       }
     } catch (e) {
-      console.warn('Could not read existing database.json, initializing fresh store:', e);
+      console.warn(`Could not read database file ${filePath}:`, e);
     }
-    this.save(DEFAULT_SERVER_DB);
-    return JSON.parse(JSON.stringify(DEFAULT_SERVER_DB));
-  }
-
-  public save(data?: ServerDatabase) {
-    if (data) this.db = data;
-    this.db.lastUpdated = new Date().toISOString();
+    const fresh = JSON.parse(JSON.stringify(DEFAULT_SERVER_DB));
     try {
-      fs.writeFileSync(DB_FILE, JSON.stringify(this.db, null, 2), 'utf-8');
+      fs.writeFileSync(filePath, JSON.stringify(fresh, null, 2), 'utf-8');
+    } catch (e) {}
+    return fresh;
+  }
+
+  public getDatabase(email?: string): ServerDatabase {
+    if (!email) return this.defaultDb;
+    const clean = this.sanitizeEmail(email);
+    if (!this.userDbs.has(clean)) {
+      const p = this.getUserDbPath(email);
+      const userDb = this.loadDbFile(p);
+      userDb.ownerEmail = email;
+      this.userDbs.set(clean, userDb);
+    }
+    return this.userDbs.get(clean)!;
+  }
+
+  public saveDatabase(db: ServerDatabase, email?: string) {
+    db.lastUpdated = new Date().toISOString();
+    const filePath = email ? this.getUserDbPath(email) : DEFAULT_DB_FILE;
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(db, null, 2), 'utf-8');
     } catch (e) {
-      console.error('Failed to write database file:', e);
+      console.error(`Failed to write database file ${filePath}:`, e);
     }
   }
 
-  public getDatabase(): ServerDatabase {
-    return this.db;
-  }
-
-  public sync(action: string, table: string, data: any) {
+  public sync(action: string, table: string, data: any, email?: string) {
     if (!table) return;
-    if (!this.db.tables) {
-      this.db.tables = { ...DEFAULT_SERVER_DB.tables };
+    const db = this.getDatabase(email);
+    if (!db.tables) {
+      db.tables = { ...DEFAULT_SERVER_DB.tables };
     }
 
     if (table === 'settings') {
       if (data && data.value) {
-        this.db.settings = { ...this.db.settings, ...data.value };
+        db.settings = { ...db.settings, ...data.value };
       } else if (data) {
-        this.db.settings = { ...this.db.settings, ...data };
+        db.settings = { ...db.settings, ...data };
       }
-      this.save();
+      this.saveDatabase(db, email);
       return;
     }
 
-    if (!Array.isArray(this.db.tables[table as keyof ServerDatabase['tables']])) {
-      (this.db.tables as any)[table] = [];
+    if (!Array.isArray(db.tables[table as keyof ServerDatabase['tables']])) {
+      (db.tables as any)[table] = [];
     }
-    const list = (this.db.tables as any)[table] as any[];
+    const list = (db.tables as any)[table] as any[];
 
     if (action === 'put') {
       const idx = list.findIndex((item: any) => item.id === data.id || (item.oid && item.oid === data.oid));
@@ -139,30 +165,48 @@ class ServerStorage {
         }
       }
     } else if (action === 'delete') {
-      (this.db.tables as any)[table] = list.filter((item: any) => item.id !== data && item.oid !== data);
+      (db.tables as any)[table] = list.filter((item: any) => item.id !== data && item.oid !== data);
     }
 
-    this.save();
+    this.saveDatabase(db, email);
   }
 
-  public dump(payload: { tables?: any; settings?: any }) {
+  public dump(payload: { tables?: any; settings?: any }, email?: string) {
+    const db = this.getDatabase(email);
     if (payload.tables) {
-      this.db.tables = { ...this.db.tables, ...payload.tables };
+      db.tables = { ...db.tables, ...payload.tables };
     }
     if (payload.settings) {
-      this.db.settings = { ...this.db.settings, ...payload.settings };
+      db.settings = { ...db.settings, ...payload.settings };
     }
-    this.save();
+    this.saveDatabase(db, email);
   }
 
-  public reset() {
-    this.db = JSON.parse(JSON.stringify(DEFAULT_SERVER_DB));
-    this.save();
-    return this.db;
+  public reset(email?: string) {
+    const fresh = JSON.parse(JSON.stringify(DEFAULT_SERVER_DB));
+    fresh.ownerEmail = email;
+    if (email) {
+      const clean = this.sanitizeEmail(email);
+      this.userDbs.set(clean, fresh);
+    } else {
+      this.defaultDb = fresh;
+    }
+    this.saveDatabase(fresh, email);
+    return fresh;
   }
 }
 
 const storage = new ServerStorage();
+
+function extractUserEmail(req: Request): string | undefined {
+  const h = req.headers['x-user-email'];
+  if (typeof h === 'string' && h.trim()) return h.trim();
+  const q = req.query.user;
+  if (typeof q === 'string' && q.trim()) return q.trim();
+  const b = req.body && req.body.userEmail;
+  if (typeof b === 'string' && b.trim()) return b.trim();
+  return undefined;
+}
 
 export async function startServer() {
   const app = express();
@@ -177,10 +221,12 @@ export async function startServer() {
 
   // Health and Status
   apiRouter.get('/status', (req: Request, res: Response) => {
-    const db = storage.getDatabase();
+    const userEmail = extractUserEmail(req);
+    const db = storage.getDatabase(userEmail);
     res.json({
       status: 'ok',
       time: new Date().toISOString(),
+      user: userEmail || 'single-user-default',
       store: db.settings?.company || 'OrderFlow Pro',
       counts: {
         orders: db.tables?.orders?.length || 0,
@@ -191,27 +237,31 @@ export async function startServer() {
     });
   });
 
-  // Get full database
+  // Get full database for the logged-in user
   apiRouter.get('/database', (req: Request, res: Response) => {
-    res.json(storage.getDatabase());
+    const userEmail = extractUserEmail(req);
+    res.json(storage.getDatabase(userEmail));
   });
 
   // Universal Sync endpoint for real-time item / table updates
   apiRouter.post('/sync', (req: Request, res: Response) => {
+    const userEmail = extractUserEmail(req);
     const { action, table, data } = req.body;
-    storage.sync(action, table, data);
-    res.json({ success: true });
+    storage.sync(action, table, data, userEmail);
+    res.json({ success: true, user: userEmail || 'default' });
   });
 
   // Full database dump
   apiRouter.post('/database/dump', (req: Request, res: Response) => {
-    storage.dump(req.body);
+    const userEmail = extractUserEmail(req);
+    storage.dump(req.body, userEmail);
     res.json({ success: true });
   });
 
   // Reset database
   apiRouter.post('/database/reset', (req: Request, res: Response) => {
-    const reset = storage.reset();
+    const userEmail = extractUserEmail(req);
+    const reset = storage.reset(userEmail);
     res.json({ success: true, message: 'Database reset to demo state', state: reset });
   });
 
@@ -234,7 +284,7 @@ export async function startServer() {
   }
 
   app.listen(PORT, () => {
-    console.log(`[OrderFlow Pro] Live Engine on http://0.0.0.0:${PORT}`);
+    console.log(`[OrderFlow Pro] Single-User Engine running on http://0.0.0.0:${PORT}`);
   });
 }
 

@@ -273,7 +273,7 @@ function handleLogoUpload(input) {
           </div>
           <div>
             <div class="text-2xl font-extrabold tracking-tight">OrderFlow Pro</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 mono">multi-tenant order engine</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mono">single-user order engine</div>
           </div>
         </div>
         <h1 class="text-4xl xl:text-5xl font-extrabold leading-[1.08] tracking-tight">
@@ -480,11 +480,16 @@ function handleLogoUpload(input) {
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div class="bento glass card p-4 sm:p-5">
             <div class="flex items-start justify-between">
-              <div class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Today's Orders</div>
+              <div class="text-[11px] font-bold uppercase tracking-widest text-slate-400" id="dashOrdersLabel">Today's Orders</div>
               <span class="pill bg-[rgb(var(--acc-rgb)/.12)] text-[rgb(var(--acc-rgb))]"><i class="fa-solid fa-arrow-trend-up text-[9px]"></i> live</span>
             </div>
             <div class="mt-3 text-3xl sm:text-4xl font-extrabold mono tracking-tight" id="kpiToday">0</div>
             <div class="text-[11px] text-slate-400 mt-1" id="kpiTodaySub">0 pending · 0 in process</div>
+            <div class="mt-3 pt-2 border-t hairline flex items-center gap-1.5">
+              <i class="fa-regular fa-calendar text-[11px] text-slate-400"></i>
+              <input type="date" id="dashOrderDate" class="field !py-0.5 !px-1.5 !text-xs !w-auto flex-1 font-mono" onchange="Dashboard.setDateFilter(this.value)" title="Filter orders by date">
+              <button class="btn btn-ghost btn-xs text-[10px] px-1.5" onclick="Dashboard.resetDateFilter()" title="Reset to today"><i class="fa-solid fa-rotate-left"></i></button>
+            </div>
           </div>
           <div class="bento glass card p-4 sm:p-5">
             <div class="flex items-start justify-between">
@@ -553,8 +558,50 @@ function handleLogoUpload(input) {
         <div class="grid xl:grid-cols-[minmax(0,1fr)_380px] gap-4">
           <div class="space-y-4">
 
+            <!-- line items -->
+            <div class="glass card p-4 sm:p-5 relative z-20">
+              <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <div class="font-bold flex items-center gap-2"><i class="fa-solid fa-cart-shopping text-[rgb(var(--acc-rgb))]"></i> Line items</div>
+                <div class="flex items-center gap-2">
+                  <span class="pill surface2 border hairline text-slate-500" id="lockPill"><i class="fa-solid fa-lock text-[9px]"></i> <span id="lockTxt">All</span></span>
+                  <button class="btn btn-ghost btn-sm" onclick="OrderUI.unlock()"><i class="fa-solid fa-lock-open"></i> Reset</button>
+                </div>
+              </div>
+              <div class="mb-3 flex items-center gap-2">
+                <label class="lbl !mb-0 font-bold text-xs whitespace-nowrap text-slate-400 uppercase tracking-wider">
+                  <i class="fa-solid fa-layer-group text-[rgb(var(--acc-rgb))] mr-1"></i> Category
+                </label>
+                <select id="catSelect" class="field flex-1 text-sm font-semibold" onchange="OrderUI.lock(this.value || null)">
+                  <option value="">All Categories</option>
+                </select>
+                <button class="btn btn-ghost btn-sm" onclick="OrderUI.unlock()" title="Reset Category"><i class="fa-solid fa-rotate-left"></i></button>
+              </div>
+              <div class="relative mb-3">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input id="prodSearch" class="field !pl-9" placeholder="Search product to add (or press Enter)…" oninput="OrderUI.prodSearch(this.value)" onkeydown="OrderUI.prodKey(event)">
+                <div id="prodDrop" class="hidden absolute z-40 mt-1 w-full max-h-72 overflow-auto rounded-xl surface border hairline shadow-2xl"></div>
+              </div>
+              <div class="tbl-wrap surface2 border hairline rounded-xl">
+                <table class="tbl">
+                  <thead><tr>
+                    <th style="min-width:150px">Item</th>
+                    <th style="width:92px">Qty</th>
+                    <th style="width:132px">Unit</th>
+                    <th style="width:120px">Rate</th>
+                    <th style="width:110px" class="text-right">Amount</th>
+                    <th style="width:44px"></th>
+                  </tr></thead>
+                  <tbody id="cartBody"></tbody>
+                </table>
+              </div>
+              <div id="cartEmpty" class="text-center py-8 text-slate-400 text-sm">
+                <i class="fa-solid fa-cart-flatbed text-2xl mb-2 block opacity-40"></i>
+                No items yet — pick a category and start adding products.
+              </div>
+            </div>
+
             <!-- customer -->
-            <div class="glass card p-4 sm:p-5">
+            <div class="glass card p-4 sm:p-5 relative z-10">
               <div class="flex items-center justify-between mb-3">
                 <div class="font-bold flex items-center gap-2"><i class="fa-solid fa-user-tie text-[rgb(var(--acc-rgb))]"></i> Customer</div>
                 <button class="btn btn-soft btn-sm" onclick="Customers.openForm()"><i class="fa-solid fa-plus"></i> New</button>
@@ -580,42 +627,9 @@ function handleLogoUpload(input) {
               </div>
             </div>
 
-            <!-- line items -->
-            <div class="glass card p-4 sm:p-5">
-              <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-                <div class="font-bold flex items-center gap-2"><i class="fa-solid fa-cart-shopping text-[rgb(var(--acc-rgb))]"></i> Line items</div>
-                <div class="flex items-center gap-2">
-                  <span class="pill surface2 border hairline text-slate-500" id="lockPill"><i class="fa-solid fa-lock text-[9px]"></i> <span id="lockTxt">All</span></span>
-                  <button class="btn btn-ghost btn-sm" onclick="OrderUI.unlock()"><i class="fa-solid fa-lock-open"></i> Reset</button>
-                </div>
-              </div>
-              <div class="flex gap-2 overflow-auto hide-scroll pb-1 mb-3" id="catChips"></div>
-              <div class="relative mb-3">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                <input id="prodSearch" class="field !pl-9" placeholder="Search product to add (or press Enter)…" oninput="OrderUI.prodSearch(this.value)" onkeydown="OrderUI.prodKey(event)">
-                <div id="prodDrop" class="hidden absolute z-40 mt-1 w-full max-h-72 overflow-auto rounded-xl surface border hairline shadow-2xl"></div>
-              </div>
-              <div class="tbl-wrap surface2 border hairline rounded-xl">
-                <table class="tbl">
-                  <thead><tr>
-                    <th style="min-width:150px">Item</th>
-                    <th style="width:92px">Qty</th>
-                    <th style="width:132px">Unit</th>
-                    <th style="width:120px">Rate</th>
-                    <th style="width:110px" class="text-right">Amount</th>
-                    <th style="width:44px"></th>
-                  </tr></thead>
-                  <tbody id="cartBody"></tbody>
-                </table>
-              </div>
-              <div id="cartEmpty" class="text-center py-8 text-slate-400 text-sm">
-                <i class="fa-solid fa-cart-flatbed text-2xl mb-2 block opacity-40"></i>
-                No items yet — pick a category and start adding products.
-              </div>
-            </div>
           </div>
 
-          <!-- summary -->
+            <!-- summary -->
           <div class="space-y-4 xl:sticky xl:top-20 self-start">
             <div class="glass card p-5">
               <div class="font-bold mb-3 flex items-center gap-2"><i class="fa-solid fa-receipt text-[rgb(var(--acc-rgb))]"></i> Order summary</div>
@@ -687,7 +701,8 @@ function handleLogoUpload(input) {
             <input id="dateTo" type="date" class="field !w-auto" onchange="Orders.render()" title="To date">
             <button class="btn btn-ghost btn-sm" onclick="Orders.resetFilters()"><i class="fa-solid fa-rotate-left"></i></button>
             <div class="flex-1"></div>
-            <button class="btn btn-soft btn-sm" onclick="Export.ordersXlsx()"><i class="fa-solid fa-file-excel"></i> Excel</button>
+            <button class="btn btn-soft btn-sm" onclick="Export.ordersXlsx()"><i class="fa-solid fa-file-excel text-emerald-500"></i> Excel</button>
+            <button class="btn btn-soft btn-sm" onclick="Export.ordersPdf()"><i class="fa-solid fa-file-pdf text-rose-500"></i> PDF</button>
             <button class="btn btn-ghost btn-sm" onclick="Orders.openRecycle()"><i class="fa-solid fa-recycle"></i> Bin <span class="mono" id="binCount">0</span></button>
           </div>
           <div id="batchBar" class="hidden mt-3 flex flex-wrap items-center gap-2 rounded-xl surface2 border hairline p-2.5">
@@ -732,6 +747,14 @@ function handleLogoUpload(input) {
               <input id="demandSearch" class="field !pl-9" placeholder="Filter product / category…" oninput="Demand.render()">
             </div>
             <select id="demandCat" class="field !w-auto" onchange="Demand.render()"><option value="">All categories</option></select>
+            <select id="demandArea" class="field !w-auto" onchange="Demand.render()"><option value="">All locations/areas</option></select>
+            <div class="relative min-w-[150px]">
+              <i class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+              <input id="demandCust" class="field !pl-8 !w-auto text-xs" placeholder="Filter customer / shop…" oninput="Demand.render()">
+            </div>
+            <button class="btn btn-accent btn-sm" onclick="Demand.orderFiltered()" title="Order filtered demand items">
+              <i class="fa-solid fa-cart-plus mr-1"></i> Order
+            </button>
             <div class="flex-1"></div>
             <button class="btn btn-soft btn-sm" onclick="Export.demandXlsx()"><i class="fa-solid fa-file-excel"></i> Excel</button>
             <button class="btn btn-ghost btn-sm" onclick="Export.demandCsv()"><i class="fa-solid fa-file-csv"></i> CSV</button>
@@ -805,6 +828,7 @@ function handleLogoUpload(input) {
                 <button class="btn btn-accent btn-sm" onclick="Products.openForm()"><i class="fa-solid fa-plus"></i> Add</button>
                 <button class="btn btn-soft btn-sm" onclick="Import.products(this)"><i class="fa-solid fa-file-arrow-up"></i> Import</button>
                 <button class="btn btn-ghost btn-sm" onclick="Export.productsXlsx()"><i class="fa-solid fa-file-arrow-down"></i> Export</button>
+                <button class="btn btn-ghost btn-sm" onclick="Export.productTemplate()" title="Download Excel template for products"><i class="fa-solid fa-download text-accent"></i> Template</button>
               </div>
             </div>
             <div class="glass card overflow-hidden">
@@ -1100,6 +1124,18 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const num = (v) => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
 
+
+function pdfMoney(n) {
+  const v = Math.round(num(n) * 100) / 100;
+  const cur = (S.settings && S.settings.currency) ? S.settings.currency : 'Rs. ';
+  const sym = (cur === '₹' || cur === '\u20B9') ? 'Rs. ' : (cur.length === 1 && cur.charCodeAt(0) < 128 ? cur : 'Rs. ');
+  return sym + v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function pdfNum(n) {
+  const v = Math.round(num(n) * 100) / 100;
+  return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function money(n) {
   const v = Math.round(num(n) * 100) / 100;
   return '₹' + v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1222,7 +1258,11 @@ const UI = {
     host.appendChild(wrap);
     return wrap;
   },
-  closeModal(el) { const m = el.closest('.mask') || el; m.remove(); },
+  closeModal(el) {
+    const m = el ? (el.closest ? el.closest('.mask') : el) : (document.querySelector('.mask:last-child') || document.querySelector('.mask'));
+    if (m && typeof m.remove === 'function') m.remove();
+  },
+  close(el) { UI.closeModal(el); },
   async confirm(title, msg, okText = 'Confirm', danger = true) {
     return new Promise((resolve) => {
       const wrap = UI.modal(`
@@ -1400,6 +1440,7 @@ const Nav = {
     el.classList.toggle('hidden', !show);
   },
 };
+window.App = { go: (id) => Nav.go(id) };
 
 /* ---------------------------------- Data layer ---------------------------------- */
 const Data = {
@@ -1410,7 +1451,7 @@ const Data = {
     try {
       fetch('/api/sync', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-user-email': (S.user && S.user.email) ? S.user.email : 'owner@orderflow.local' },
         body: JSON.stringify({ action: 'put', table, data: obj })
       }).catch(function(){});
     } catch(e){}
@@ -1424,7 +1465,7 @@ const Data = {
     try {
       fetch('/api/sync', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-user-email': (S.user && S.user.email) ? S.user.email : 'owner@orderflow.local' },
         body: JSON.stringify({ action: 'bulkPut', table, data: arr })
       }).catch(function(){});
     } catch(e){}
@@ -1435,7 +1476,7 @@ const Data = {
     try {
       fetch('/api/sync', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-user-email': (S.user && S.user.email) ? S.user.email : 'owner@orderflow.local' },
         body: JSON.stringify({ action: 'delete', table, data: id })
       }).catch(function(){});
     } catch(e){}
@@ -1713,7 +1754,7 @@ const Auth = {
   },
   async enter(sess) {
     S.user = { email: sess.email || 'demo@orderflow.local', name: sess.name || 'Store Owner' };
-    S.mode = sess.mode || 'local';
+    S.mode = 'single-user';
     S.storeId = sess.storeId || 'demo-store';
     S.storeName = sess.storeName || 'Mahavir Traders';
     S.sessionExp = sess.exp || 0;
@@ -1724,7 +1765,7 @@ const Auth = {
     await Data.refresh();
     Nav.build();
     Nav.go('dashboard');
-    if (S.mode === 'demo') Auth.startDemoTimer();
+    // Single-user model: persistent session without 60-min demo kickout
     Cloud.init();
     Settings.render();
     Admin.syncDemoBar();
@@ -1765,20 +1806,61 @@ const Auth = {
     Auth.enter(sess);
     toast('Demo session started — valid for 1 hour', 'ok');
   },
+  async loadUserData(email) {
+    try {
+      const curUser = email || (S.user && S.user.email) || 'owner@orderflow.local';
+      const sResp = await fetch('/api/database?user=' + encodeURIComponent(curUser), { headers: { 'x-user-email': curUser } });
+      if (sResp.ok) {
+        const sData = await sResp.json();
+        // Clear local storage tables to guarantee single-user isolation
+        await db.orders.clear();
+        await db.customers.clear();
+        await db.products.clear();
+        await db.categories.clear();
+        await db.units.clear();
+
+        if (sData.orders && sData.orders.length) await db.orders.bulkPut(sData.orders);
+        if (sData.customers && sData.customers.length) await db.customers.bulkPut(sData.customers);
+        if (sData.products && sData.products.length) await db.products.bulkPut(sData.products);
+        if (sData.categories && sData.categories.length) await db.categories.bulkPut(sData.categories);
+        if (sData.units && sData.units.length) await db.units.bulkPut(sData.units);
+        if (sData.settings && Object.keys(sData.settings).length > 0) {
+          await db.settings.put({ key: 'main', value: sData.settings });
+          S.settings = Object.assign({}, DEF_SETTINGS, sData.settings);
+        }
+        await Data.refresh();
+      }
+    } catch(e) {
+      console.warn('Failed to load user data:', e);
+    }
+  },
   async signIn() {
     const email = $('#siEmail').value.trim(), pass = $('#siPass').value;
-    if (!email || !pass) return toast('Enter email and password', 'warn');
+    if (!email) return toast('Please enter your email', 'warn');
     const btn = $('button[onclick="Auth.signIn()"]'); UI.loading(btn, true, 'Signing in…');
     try {
       if (Cloud.ready && window.__FB) {
         const F = window.__FB;
         const cred = await F.signInWithEmailAndPassword(Cloud.api.auth, email, pass);
         const sess = { mode: 'cloud', email: cred.user.email, name: cred.user.email.split('@')[0], storeId: 'tenant-' + cred.user.uid, storeName: cred.user.email.split('@')[0], exp: 0 };
-        Auth.saveSession(sess); UI.loading(btn, false); Auth.enter(sess);
-        toast('Signed in — cloud sync active', 'ok');
+        Auth.saveSession(sess); UI.loading(btn, false);
+        await Auth.loadUserData(sess.email);
+        Auth.enter(sess);
+        toast('Signed in — single user session active', 'ok');
       } else {
+        const sess = {
+          mode: 'single-user',
+          email: email.toLowerCase(),
+          name: email.split('@')[0],
+          storeId: 'user-' + email.replace(/[^a-z0-9]/gi, '_').toLowerCase(),
+          storeName: (email.split('@')[0]).toUpperCase() + ' Store',
+          exp: Date.now() + (365 * 86400000)
+        };
+        Auth.saveSession(sess);
         UI.loading(btn, false);
-        toast('Cloud auth unavailable (no Firebase config). Use Instant Demo Login or add your config in Settings.', 'warn', 'fa-cloud-slash');
+        await Auth.loadUserData(sess.email);
+        Auth.enter(sess);
+        toast(`Signed in as ${sess.email}!`, 'ok');
       }
     } catch (e) {
       UI.loading(btn, false);
@@ -1790,7 +1872,7 @@ const Auth = {
     const pass = $('#rgPass').value, phone = $('#rgPhone').value.trim(), pin = $('#rgPin').value.trim();
     if (!store || !email || pass.length < 6) return toast('Store name, email and a 6+ character password are required', 'warn');
     const btn = $('button[onclick="Auth.register()"]'); UI.loading(btn, true, 'Creating…');
-    const sess = { mode: 'cloud', email, name: store, storeId: 'tenant-' + uid().toLowerCase(), storeName: store, exp: 0, phone, pin };
+    const sess = { mode: 'single-user', email: email.toLowerCase(), name: store, storeId: 'user-' + email.replace(/[^a-z0-9]/gi, '_').toLowerCase(), storeName: store, exp: Date.now() + (365 * 86400000), phone, pin };
     try {
       if (Cloud.ready && window.__FB) {
         const F = window.__FB;
@@ -1798,36 +1880,44 @@ const Auth = {
         sess.storeId = 'tenant-' + cred.user.uid;
         sess.mode = 'cloud';
         await F.setDoc(F.doc(Cloud.api.db, 'tenants', sess.storeId, 'settings', 'main'), { key: 'main', value: { ...DEF_SETTINGS, company: store, phone: phone || DEF_SETTINGS.phone }, _t: Date.now() });
-      } else {
-        sess.mode = 'local';
       }
       Auth.saveSession(sess);
       UI.loading(btn, false);
+      // Initialize fresh user store
+      await db.orders.clear();
+      await db.customers.clear();
+      await db.products.clear();
       await Settings.persist({ ...DEF_SETTINGS, company: store, phone: phone || DEF_SETTINGS.phone, palette: S.settings.palette, theme: S.settings.theme });
       await Auth.enter(sess);
       if ((await db.customers.count()) === 0) await Data.seedDemo(true);
-      toast(`Workspace “${store}” ready`, 'ok');
+      toast(`Single-user workspace “${store}” ready`, 'ok');
     } catch (e) { UI.loading(btn, false); toast(Auth.mapErr(e), 'err'); }
   },
-  /* Demo → cloud: guest sessions have no Firebase user, so sync can never go LIVE until
-     the user registers / signs in. Hand them straight back to the auth screen. */
   connectCloud() {
-    UI.confirm('Connect to the cloud?',
-      'Demo sessions are <b>local-only</b> — they never sign in to Firebase, so sync stays paused. You will be signed out and taken to the login screen: choose <b>Register Store</b> to create your account (or <b>Sign In</b> if you already have one).',
-      'Continue').then((yes) => {
+    UI.confirm('Single-user storage active',
+      'Your workspace uses secure isolated storage on the backend server. Do you want to sign in with a different user account?',
+      'Switch Account').then((yes) => {
       if (!yes) return;
-      Admin.log('session.end', 'demo → cloud handoff');
+      Admin.log('session.end', 'user account switch');
       Cloud.unsub.forEach(u => { try { u(); } catch (e) {} }); Cloud.unsub = [];
       localStorage.removeItem('ofp.session');
       location.reload();
     });
   },
   signOut() {
-    UI.confirm('Sign out?', 'Your local data stays on this device. You will need to sign in again to sync.', 'Sign out').then(async (yes) => {
+    UI.confirm('Sign out?', 'Signing out will switch users. Your saved data is stored safely in the database for your account.', 'Sign out').then(async (yes) => {
       if (!yes) return;
       Admin.log('session.end', S.user ? S.user.email : '—');
       if (Cloud.ready && window.__FB) { try { await window.__FB.signOut(Cloud.api.auth); } catch (e) {} }
       Cloud.unsub.forEach(u => { try { u(); } catch (e) {} }); Cloud.unsub = [];
+      // Clear local IndexedDB on signout so next user has a pristine state
+      try {
+        await db.orders.clear();
+        await db.customers.clear();
+        await db.products.clear();
+        await db.categories.clear();
+        await db.units.clear();
+      } catch(e){}
       localStorage.removeItem('ofp.session');
       location.reload();
     });
@@ -1838,7 +1928,7 @@ const Auth = {
       <div class="px-3 py-2 border-b hairline mb-1">
         <div class="font-bold text-sm truncate">${esc(S.user ? S.user.name : '—')}</div>
         <div class="text-[11px] text-slate-400 truncate mono">${esc(S.user ? S.user.email : '')}</div>
-        <div class="text-[10px] mono text-slate-400 mt-1">tenant: ${esc(S.storeId)}</div>
+        <div class="text-[10px] mono text-accent mt-1"><i class="fa-solid fa-user-shield mr-1"></i> Private Store Account</div>
       </div>
       <button class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-[rgb(var(--acc-rgb)/.1)] flex items-center gap-2" onclick="Nav.go('settings')"><i class="fa-solid fa-gear w-4"></i> Settings</button>
       <button class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-[rgb(var(--acc-rgb)/.1)] flex items-center gap-2" onclick="UI.paletteMenu(event)"><i class="fa-solid fa-palette w-4"></i> Palette</button>
@@ -1911,11 +2001,27 @@ const Render = {
 
 /* ---------------------------------- Dashboard ---------------------------------- */
 const Dashboard = {
+  dateFilter: null,
+  setDateFilter(d) {
+    Dashboard.dateFilter = d || null;
+    Dashboard.render();
+  },
+  resetDateFilter() {
+    Dashboard.dateFilter = null;
+    const el = $('#dashOrderDate');
+    if (el) el.value = '';
+    Dashboard.render();
+  },
   render() {
     const now = Date.now();
     const todayKey = isoDate(now);
+    const activeDateKey = Dashboard.dateFilter || todayKey;
+    const elDate = $('#dashOrderDate');
+    if (elDate && !elDate.value && !Dashboard.dateFilter) elDate.value = todayKey;
     const orders = S.orders || [];
-    const today = orders.filter(o => dayKey(o.createdAt) === todayKey);
+    const today = orders.filter(o => dayKey(o.createdAt) === activeDateKey);
+    const lbl = $('#dashOrdersLabel');
+    if (lbl) lbl.textContent = Dashboard.dateFilter ? `Orders (${activeDateKey})` : "Today's Orders";
     const p30 = orders.filter(o => (now - o.createdAt) < 30 * 86400000 && o.status !== 'Cancelled');
     const open = orders.filter(o => o.status === 'Pending' || o.status === 'In Process');
     const rev = p30.reduce((a, o) => a + num(o.total), 0);
@@ -1957,7 +2063,8 @@ const Dashboard = {
         </div>
       </div>`).join('');
 
-    $('#recentOrders').innerHTML = orders.slice(0, 6).map(o => `
+    const dashOrders = Dashboard.dateFilter ? orders.filter(o => dayKey(o.createdAt) === Dashboard.dateFilter) : orders.slice(0, 6);
+    $('#recentOrders').innerHTML = dashOrders.map(o => `
       <div class="flex items-center gap-3 rounded-xl surface2 border hairline px-3 py-2.5">
         <div class="w-9 h-9 rounded-lg grid place-items-center text-white text-[11px] font-bold shrink-0" style="background:${col[o.status] || 'rgb(var(--acc-rgb))'}">${esc((o.shop || o.customerName || '?').slice(0, 2).toUpperCase())}</div>
         <div class="min-w-0 flex-1">
@@ -2000,9 +2107,19 @@ const OrderUI = {
   },
   renderChips() {
     const cats = S.categories.map(c => c.name);
-    $('#catChips').innerHTML = `<button class="chip${S.catLock === null ? ' active' : ''}" onclick="OrderUI.lock(null)"><i class="fa-solid fa-border-all text-[10px]"></i> All</button>` +
-      cats.map(c => `<button class="chip${S.catLock === c ? ' active' : ''}" onclick="OrderUI.lock('${esc(c)}')">${esc(c)}</button>`).join('');
-    $('#lockTxt').textContent = S.catLock || 'All';
+    const sel = $('#catSelect');
+    if (sel) {
+      const cur = S.catLock || '';
+      sel.innerHTML = `<option value="">All Categories (${cats.length})</option>` +
+        cats.map(c => `<option value="${esc(c)}"${c === cur ? ' selected' : ''}>${esc(c)}</option>`).join('');
+    }
+    const chipsEl = $('#catChips');
+    if (chipsEl) {
+      chipsEl.innerHTML = `<button class="chip${S.catLock === null ? ' active' : ''}" onclick="OrderUI.lock(null)"><i class="fa-solid fa-border-all text-[10px]"></i> All</button>` +
+        cats.map(c => `<button class="chip${S.catLock === c ? ' active' : ''}" onclick="OrderUI.lock('${esc(c)}')">${esc(c)}</button>`).join('');
+    }
+    const lockTxt = $('#lockTxt');
+    if (lockTxt) lockTxt.textContent = S.catLock || 'All';
   },
   lock(cat) { S.catLock = cat; OrderUI.renderChips(); OrderUI.prodSearch($('#prodSearch').value); if ($('#prodSearch').value) $('#prodDrop').classList.remove('hidden'); },
   unlock() { S.catLock = null; $('#custSearch').value = ''; $('#custDrop').classList.add('hidden'); OrderUI.renderChips(); $('#prodSearch').value = ''; $('#prodDrop').classList.add('hidden'); },
@@ -2076,7 +2193,7 @@ const OrderUI = {
     if (existing) { existing.qty += 1; existing.amount = Math.round(existing.qty * existing.rate * 100) / 100; }
     else {
       const u = (p.units && p.units[0]) || { name: p.unit, rate: p.rate };
-      S.cart.push({ id: uid(), pid: p.id, name: p.name, category: p.category, unit: u.name, qty: 1, rate: num(u.rate), amount: num(u.rate) });
+      S.cart.unshift({ id: uid(), addedAt: Date.now(), pid: p.id, name: p.name, category: p.category, unit: u.name, qty: 1, rate: num(u.rate), amount: num(u.rate) });
     }
     OrderUI.renderCart();
     $('#prodSearch').value = ''; $('#prodDrop').classList.add('hidden');
@@ -2084,12 +2201,13 @@ const OrderUI = {
   },
   addCustom(name) {
     const unit = S.units[0]?.name || 'Unit';
-    S.cart.push({ id: uid(), pid: '', name, category: S.catLock || 'Uncategorized', unit, qty: 1, rate: 0, amount: 0 });
+    S.cart.unshift({ id: uid(), addedAt: Date.now(), pid: '', name, category: S.catLock || 'Uncategorized', unit, qty: 1, rate: 0, amount: 0 });
     OrderUI.renderCart();
     $('#prodSearch').value = ''; $('#prodDrop').classList.add('hidden');
   },
 
   renderCart() {
+    S.cart.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
     const tb = $('#cartBody');
     $('#cartEmpty').classList.toggle('hidden', S.cart.length > 0);
     tb.innerHTML = S.cart.map((it, i) => {
@@ -2839,7 +2957,14 @@ const Exceptions = {
 const Demand = {
   agg() {
     const map = {};
-    S.orders.filter(o => o.status === 'Pending' || o.status === 'In Process').forEach(o => {
+    const area = $('#demandArea') ? $('#demandArea').value.trim() : '';
+    const cust = ($('#demandCust') ? $('#demandCust').value : '').toLowerCase().trim();
+    S.orders.filter(o => {
+      if (o.status !== 'Pending' && o.status !== 'In Process') return false;
+      if (area && (o.area || '').trim() !== area) return false;
+      if (cust && !(`${o.customerName || ''} ${o.shop || ''} ${o.phone || ''}`.toLowerCase().includes(cust))) return false;
+      return true;
+    }).forEach(o => {
       (o.items || []).forEach(it => {
         const k = (it.name || '').trim().toLowerCase();
         if (!k) return;
@@ -2858,6 +2983,12 @@ const Demand = {
     const cats = S.categories.map(c => c.name);
     const dc = $('#demandCat'); const cur = dc.value;
     dc.innerHTML = `<option value="">All categories</option>` + cats.map(c => `<option${c === cur ? ' selected' : ''}>${esc(c)}</option>`).join('');
+    const da = $('#demandArea');
+    if (da) {
+      const curArea = da.value;
+      const areaList = Array.from(new Set(S.customers.map(c => (c.area || '').trim()).concat(S.orders.map(o => (o.area || '').trim())).filter(Boolean))).sort();
+      da.innerHTML = `<option value="">All locations/areas</option>` + areaList.map(a => `<option value="${esc(a)}"${a === curArea ? ' selected' : ''}>${esc(a)}</option>`).join('');
+    }
     const q = ($('#demandSearch') ? $('#demandSearch').value : '').toLowerCase().trim();
     const cat = dc.value;
     const rows = Demand.agg().filter(r => (!cat || r.category === cat) && (!q || (r.name + ' ' + r.category).toLowerCase().includes(q)));
@@ -2870,9 +3001,79 @@ const Demand = {
         <td>${Object.entries(r.units).map(([u, q]) => `<span class="pill bg-[rgb(var(--acc-rgb)/.1)] text-[rgb(var(--acc-rgb))] mr-1">${q} ${esc(u)}</span>`).join('')}</td>
         <td class="text-right mono">${r.orders.size}</td>
         <td class="text-right mono font-bold">${money(r.val)}</td>
-        <td><button class="btn btn-soft btn-sm" onclick="Demand.who('${esc(r.name).replace(/'/g, "\\'")}')"><i class="fa-solid fa-users"></i> Who</button></td>
+        <td class="text-right">
+          <div class="inline-flex items-center gap-1 justify-end">
+            <button class="btn btn-soft btn-xs text-[rgb(var(--acc-rgb))]" onclick="Demand.orderItem('${esc(r.name).replace(/'/g, "\\'")}')" title="Create order for this item"><i class="fa-solid fa-cart-plus"></i> Order</button>
+            <button class="btn btn-ghost btn-xs" onclick="Demand.who('${esc(r.name).replace(/'/g, "\\'")}')" title="View customer orders"><i class="fa-solid fa-users"></i> Who</button>
+          </div>
+        </td>
       </tr>`).join('') || `<tr><td colspan="8"><div class="text-center py-14 text-slate-400"><i class="fa-solid fa-boxes-stacked text-3xl block mb-2 opacity-40"></i>No open demand — every order is complete or cancelled</div></td></tr>`;
     $('#demandMeta').innerHTML = `${rows.length} items · ${rows.reduce((a, r) => a + r.qty, 0).toFixed(0)} units to dispatch · ${money(rows.reduce((a, r) => a + r.val, 0))}`;
+  },
+  orderFiltered() {
+    const q = ($('#demandSearch') ? $('#demandSearch').value : '').toLowerCase().trim();
+    const dc = $('#demandCat');
+    const cat = dc ? dc.value : '';
+    const rows = Demand.agg().filter(r => (!cat || r.category === cat) && (!q || (r.name + ' ' + r.category).toLowerCase().includes(q)));
+    if (!rows.length) {
+      return toast('No demand items found matching current filters', 'warn');
+    }
+    // Load filtered demand items directly into order cart
+    S.cart = rows.map(r => {
+      const p = S.products.find(x => x.name.toLowerCase() === r.name.toLowerCase());
+      const u = Object.keys(r.units)[0] || (p ? p.unit : 'pcs');
+      const rate = p ? p.price : (r.qty ? (r.val / r.qty) : 0);
+      return {
+        pid: p ? p.pid : uid(),
+        name: r.name,
+        category: r.category,
+        qty: Number(r.qty) || 1,
+        unit: u,
+        price: Number(rate) || 0,
+        amount: Number(rate) * (Number(r.qty) || 1),
+        custom: !p
+      };
+    });
+    // Check if customer filter matched an active customer
+    const custFilter = ($('#demandCust') ? $('#demandCust').value : '').toLowerCase().trim();
+    if (custFilter) {
+      const matchedCust = S.customers.find(c =>
+        (c.name && c.name.toLowerCase().includes(custFilter)) ||
+        (c.shop && c.shop.toLowerCase().includes(custFilter)) ||
+        (c.phone && c.phone.toLowerCase().includes(custFilter))
+      );
+      if (matchedCust) {
+        OrderUI.selectCustomer(matchedCust.cid);
+      }
+    }
+    Nav.go('order');
+    OrderUI.renderCart();
+    toast(`Loaded ${rows.length} filtered demand items into order!`, 'success');
+  },
+  orderItem(name) {
+    const row = Demand.agg().find(r => r.name.toLowerCase() === String(name).toLowerCase());
+    if (!row) return toast('Item no longer in demand', 'warn');
+    const p = S.products.find(x => x.name.toLowerCase() === row.name.toLowerCase());
+    const u = Object.keys(row.units)[0] || (p ? p.unit : 'pcs');
+    const rate = p ? p.price : (row.qty ? (row.val / row.qty) : 0);
+    // Add to cart at beginning (newest first)
+    S.cart.unshift({
+      pid: p ? p.pid : uid(),
+      name: row.name,
+      category: row.category,
+      qty: Number(row.qty) || 1,
+      unit: u,
+      price: Number(rate) || 0,
+      amount: Number(rate) * (Number(row.qty) || 1),
+      custom: !p
+    });
+    Nav.go('order');
+    OrderUI.renderCart();
+    toast(`Added ${row.name} (${row.qty} ${u}) to order!`, 'success');
+  },
+  openOrder(oid) {
+    UI.closeModal();
+    Orders.view(oid);
   },
   who(name) {
     const row = Demand.agg().find(r => r.name.toLowerCase() === String(name).toLowerCase());
@@ -2890,7 +3091,7 @@ const Demand = {
             <th class="text-left px-3 py-2">Shop</th><th class="text-left px-3 py-2">Order</th><th class="text-right px-3 py-2">Qty</th><th class="text-left px-3 py-2">Date</th><th class="text-left px-3 py-2">Status</th></tr></thead>
           <tbody>${shops.map(s => `<tr class="border-t hairline">
             <td class="px-3 py-2"><div class="font-semibold">${esc(s.shop)}</div><div class="text-[11px] text-slate-400 mono">${esc(s.phone || '')}</div></td>
-            <td class="px-3 py-2 mono">${esc(s.oid)}</td>
+            <td class="px-3 py-2"><button class="btn btn-xs btn-ghost mono font-bold text-accent" onclick="Demand.openOrder(\'${s.oid}\')">${esc(s.oid)} <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i></button></td>
             <td class="px-3 py-2 text-right mono font-bold">${s.qty} ${esc(s.unit)}</td>
             <td class="px-3 py-2 mono">${fmtDate(s.date)}</td>
             <td class="px-3 py-2"><span class="pill st-${s.status.replace(/\s/g, '')}">${s.status}</span></td></tr>`).join('')}</tbody>
@@ -2946,33 +3147,44 @@ const Import = {
       UI.loading(btn, true, 'Importing…');
       try {
         const rows = await Import.rows(f);
-        let added = 0, exc = 0;
-        const catNames = new Set(S.categories.map(c => c.name.toLowerCase()));
-        const unitNames = new Set(S.units.map(u => u.name.toLowerCase()));
+        let added = 0, updated = 0;
         for (const r of rows) {
-          const name = String(r['Name'] || r['name'] || r['Product'] || r['Item'] || '').trim();
+          const name = String(r['Product Name'] || r['Product'] || r['Item Name'] || r['Item'] || r['Name'] || r['name'] || '').trim();
           if (!name) continue;
-          const cat = String(r['Category'] || r['category'] || '').trim();
-          const unit = String(r['Unit'] || r['unit'] || '').trim();
-          const rate = num(r['Rate'] || r['rate'] || r['Price'] || 0);
-          const missingCat = cat && !catNames.has(cat.toLowerCase());
-          const missingUnit = unit && !unitNames.has(unit.toLowerCase());
-          if (missingCat || missingUnit || !cat || !unit) {
-            await Exceptions.add({ name, category: cat, unit: unit, rate, source: f.name });
-            exc++;
-            continue;
+          const cat = String(r['Category'] || r['category'] || r['Group'] || 'General').trim() || 'General';
+          const unit = String(r['Unit'] || r['unit'] || r['UOM'] || r['Measurement'] || 'PCS').trim() || 'PCS';
+          const rate = num(r['Rate'] || r['rate'] || r['Price'] || r['Selling Price'] || r['MRP'] || 0);
+          const stock = num(r['Stock'] || r['stock'] || r['Qty'] || r['Quantity'] || 0);
+
+          // Auto-register category if not exists
+          if (!S.categories.some(c => (c.name || '').toLowerCase() === cat.toLowerCase())) {
+            const newCat = { id: uid(), name: cat, updatedAt: Date.now() };
+            S.categories.push(newCat);
+            await Data.put('categories', newCat);
           }
-          const rec = { id: uid(), pid: 'P' + Math.floor(Math.random() * 9000 + 1000), name, category: cat, unit, rate, units: [{ name: unit, rate }] };
+          // Auto-register unit if not exists
+          if (!S.units.some(u => (u.name || '').toLowerCase() === unit.toLowerCase())) {
+            const newUnit = { id: uid(), name: unit, updatedAt: Date.now() };
+            S.units.push(newUnit);
+            await Data.put('units', newUnit);
+          }
+
           const dup = S.products.find(p => (p.name || '').toLowerCase() === name.toLowerCase());
-          if (dup) { Object.assign(dup, { category: cat, unit, rate, units: [{ name: unit, rate }] }); await Data.put('products', dup); }
-          else { await Data.put('products', rec); }
-          added++;
+          if (dup) {
+            Object.assign(dup, { category: cat, unit, rate, stock: stock || dup.stock, units: [{ name: unit, rate }] });
+            await Data.put('products', dup);
+            updated++;
+          } else {
+            const rec = { id: uid(), pid: 'P' + Math.floor(Math.random() * 9000 + 1000), name, category: cat, unit, rate, stock, units: [{ name: unit, rate }] };
+            await Data.put('products', rec);
+            added++;
+          }
         }
         await Data.refresh();
         UI.loading(btn, false);
-        toast(`Import done — ${added} catalog rows, ${exc} sent to exceptions`, exc ? 'warn' : 'ok');
-        if (exc) Nav.go('exceptions');
-      } catch (e) { UI.loading(btn, false); toast('Could not read that file: ' + e.message, 'err'); }
+        toast(`Product import successful — ${added} added, ${updated} updated`, 'ok');
+        Products.render();
+      } catch (e) { UI.loading(btn, false); toast('Could not read product file: ' + e.message, 'err'); }
     });
   },
 };
@@ -3017,6 +3229,61 @@ const Export = {
     XLSX.utils.book_append_sheet(wb, ws2, 'Order Line Items');
     Export.download(wb, `orders-${isoDate(Date.now())}.xlsx`);
   },
+  ordersPdf() {
+    const list = Orders.filtered();
+    if (!list.length) return toast('No orders to export', 'warn');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'landscape' });
+    const W = doc.internal.pageSize.getWidth();
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, W, 62, 'F');
+    doc.setTextColor(255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.text(`${S.settings.company || 'OrderFlow Pro'} — Filtered Orders Report`, 40, 32);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on ${fmtDate(Date.now())} · Total: ${list.length} orders`, 40, 48);
+    
+    const rows = list.map((o, i) => [
+      i + 1,
+      o.oid,
+      fmtDate(o.createdAt),
+      o.customerName || '—',
+      o.shop || '—',
+      o.phone || '—',
+      String((o.items || []).reduce((a, b) => a + num(b.qty), 0)),
+      pdfMoney(o.total),
+      o.status
+    ]);
+
+    doc.autoTable({
+      startY: 76,
+      head: [['#', 'Order ID', 'Date', 'Customer', 'Shop', 'Phone', 'Qty', 'Total', 'Status']],
+      body: rows,
+      theme: 'striped',
+      styles: { fontSize: 8.5, cellPadding: 5 },
+      headStyles: { fillColor: [15, 23, 42] },
+      columnStyles: {
+        0: { cellWidth: 24 },
+        1: { font: 'courier', fontStyle: 'bold' },
+        6: { halign: 'right', font: 'courier' },
+        7: { halign: 'right', font: 'courier', fontStyle: 'bold' },
+        8: { halign: 'center' }
+      },
+      margin: { left: 40, right: 40 },
+    });
+
+    const totQty = list.reduce((acc, o) => acc + (o.items || []).reduce((a, b) => a + num(b.qty), 0), 0);
+    const totVal = list.reduce((acc, o) => acc + num(o.total), 0);
+    const y = doc.lastAutoTable.finalY + 18;
+    doc.setTextColor(20);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(`Total Orders: ${list.length}   ·   Total Qty: ${totQty}   ·   Grand Total: ${pdfMoney(totVal)}`, 40, y);
+    doc.save(`orders-report-${isoDate(Date.now())}.pdf`);
+    toast('Orders PDF report downloaded', 'ok');
+  },
   demandXlsx() {
     const rows = Demand.agg().map(r => ({
       'Product': r.name, 'Category': r.category, 'Demand Qty': r.qty,
@@ -3057,6 +3324,20 @@ const Export = {
     XLSX.utils.book_append_sheet(wb, ws, 'Customers Template');
     Export.download(wb, 'customer-import-template.xlsx');
   },
+  productTemplate() {
+    const ws = XLSX.utils.json_to_sheet([
+      { 'Product Name': 'Basmati Rice Premium', 'Category': 'Grains', 'Unit': 'kg', 'Rate': 120, 'Stock': 50 },
+      { 'Product Name': 'Mustard Oil 1L', 'Category': 'Edible Oil', 'Unit': 'bottle', 'Rate': 165, 'Stock': 100 },
+      { 'Product Name': 'Whole Wheat Flour 10kg', 'Category': 'Flour', 'Unit': 'bag', 'Rate': 410, 'Stock': 30 },
+      { 'Product Name': 'Tata Salt 1kg', 'Category': 'Spices & Condiments', 'Unit': 'pkt', 'Rate': 28, 'Stock': 200 },
+      { 'Product Name': 'Toor Dal Premium', 'Category': 'Pulses', 'Unit': 'kg', 'Rate': 155, 'Stock': 80 },
+    ]);
+    ws['!cols'] = [{ wch: 28 }, { wch: 22 }, { wch: 10 }, { wch: 12 }, { wch: 10 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Products Template');
+    Export.download(wb, 'product-import-template.xlsx');
+    toast('Product import template downloaded', 'ok');
+  },
   productsXlsx() {
     const ws = XLSX.utils.json_to_sheet(S.products.map(p => ({ Name: p.name, Category: p.category, Unit: p.unit, Rate: num(p.rate), Units: (p.units || []).map(u => `${u.name}@${u.rate}`).join(', ') })));
     ws['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 10 }, { wch: 10 }, { wch: 40 }];
@@ -3077,7 +3358,7 @@ const Export = {
     doc.text(`${row.name} · ${fmtDate(Date.now())}`, 40, 48);
     doc.setTextColor(20);
     doc.setFontSize(11); doc.setFont('helvetica', 'bold');
-    doc.text(`Total demand: ${row.qty}   ·   Orders: ${row.orders.size}   ·   Value: ${money(row.val)}`, 40, 84);
+    doc.text(`Total demand: ${row.qty}   ·   Orders: ${row.orders.size}   ·   Value: ${pdfMoney(row.val)}`, 40, 84);
     doc.autoTable({
       startY: 100,
       head: [['Shop', 'Order ID', 'Qty', 'Unit', 'Date', 'Status']],
@@ -3105,7 +3386,7 @@ const Export = {
     doc.autoTable({
       startY: 84,
       head: [['#', 'Product', 'Category', 'Demand Qty', 'Units', 'Orders', 'Value']],
-      body: rows.map((r, i) => [i + 1, r.name, r.category, String(r.qty), Object.entries(r.units).map(([u, q]) => `${q} ${u}`).join(', '), String(r.orders.size), money(r.val)]),
+      body: rows.map((r, i) => [i + 1, r.name, r.category, String(r.qty), Object.entries(r.units).map(([u, q]) => `${q} ${u}`).join(', '), String(r.orders.size), pdfMoney(r.val)]),
       theme: 'striped',
       styles: { fontSize: 8.5, cellPadding: 5 },
       headStyles: { fillColor: [15, 23, 42] },
@@ -3114,7 +3395,7 @@ const Export = {
     });
     const y = doc.lastAutoTable.finalY + 20;
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-    doc.text(`Total items: ${rows.length}   ·   Total qty: ${rows.reduce((a, r) => a + r.qty, 0).toFixed(0)}   ·   Total value: ${money(rows.reduce((a, r) => a + r.val, 0))}`, 40, y);
+    doc.text(`Total items: ${rows.length}   ·   Total qty: ${rows.reduce((a, r) => a + r.qty, 0).toFixed(0)}   ·   Total value: ${pdfMoney(rows.reduce((a, r) => a + r.val, 0))}`, 40, y);
     doc.save(`demand-summary-${isoDate(Date.now())}.pdf`);
     toast('Demand PDF downloaded', 'ok');
   },
@@ -3405,7 +3686,7 @@ const Invoice = {
     doc.text(`Line items: ${(o.items || []).length}`, 50 + (W - 90) / 2 + 10, 149);
     doc.text(`Total qty: ${(o.items || []).reduce((a, b) => a + num(b.qty), 0)}`, 50 + (W - 90) / 2 + 10, 162);
 
-    const body = (o.items || []).map((it, i) => [i + 1, it.name + (it.category ? `\n${it.category}` : ''), it.unit, String(it.qty), money(it.rate), money(it.amount)]);
+    const body = (o.items || []).map((it, i) => [i + 1, it.name + (it.category ? `\n${it.category}` : ''), it.unit, String(it.qty), pdfMoney(it.rate), pdfMoney(it.amount)]);
     doc.autoTable({
       startY: 182,
       head: [['#', 'Item', 'Unit', 'Qty', 'Rate', 'Amount']],
@@ -3420,12 +3701,12 @@ const Invoice = {
     let y = doc.lastAutoTable.finalY + 18;
     const tx = W - 40 - 250;
     doc.setFontSize(10);
-    doc.text('Subtotal', tx, y); doc.text(money(o.subtotal), W - 40, y, { align: 'right' }); y += 16;
-    doc.text('Discount', tx, y); doc.text('- ' + money(o.discount || 0), W - 40, y, { align: 'right' }); y += 16;
-    if (num(o.tax)) { doc.text(`Tax @ ${num(o.taxPct)}%`, tx, y); doc.text(money(o.tax), W - 40, y, { align: 'right' }); y += 16; }
+    doc.text('Subtotal', tx, y); doc.text(pdfMoney(o.subtotal), W - 40, y, { align: 'right' }); y += 16;
+    doc.text('Discount', tx, y); doc.text('- ' + pdfMoney(o.discount || 0), W - 40, y, { align: 'right' }); y += 16;
+    if (num(o.tax)) { doc.text(`Tax @ ${num(o.taxPct)}%`, tx, y); doc.text(pdfMoney(o.tax), W - 40, y, { align: 'right' }); y += 16; }
     doc.setFillColor(15, 23, 42); doc.rect(tx - 10, y - 12, 260, 24, 'F');
     doc.setTextColor(255); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    doc.text('GRAND TOTAL', tx, y + 4); doc.text(money(o.total), W - 40, y + 4, { align: 'right' });
+    doc.text('GRAND TOTAL', tx, y + 4); doc.text(pdfMoney(o.total), W - 40, y + 4, { align: 'right' });
 
     y += 44;
     doc.setTextColor(60, 64, 74); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
@@ -3462,7 +3743,7 @@ const Settings = {
     try {
       fetch('/api/sync', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-user-email': (S.user && S.user.email) ? S.user.email : 'owner@orderflow.local' },
         body: JSON.stringify({ action: 'put', table: 'settings', data: S.settings })
       }).catch(function(){});
     } catch(e){}
@@ -3942,7 +4223,9 @@ async function boot() {
   try {
     setSplash('opening local database…', 25);
     try {
-      const sResp = await fetch('/api/database');
+      const sessRaw = localStorage.getItem('ofp.session');
+    const curUser = (sessRaw ? JSON.parse(sessRaw).email : null) || 'owner@orderflow.local';
+    const sResp = await fetch('/api/database?user=' + encodeURIComponent(curUser), { headers: { 'x-user-email': curUser } });
       if (sResp.ok) {
         const sData = await sResp.json();
         if (sData && sData.settings && Object.keys(sData.settings).length > 0) {
@@ -4040,5 +4323,16 @@ try {
 </script>
 
 
+<script>
+document.addEventListener('click', function(ev) {
+  const custDrop = document.getElementById('custDrop');
+  const custSearch = document.getElementById('custSearch');
+  if (custDrop && !custDrop.classList.contains('hidden')) {
+    if (!custDrop.contains(ev.target) && ev.target !== custSearch) {
+      custDrop.classList.add('hidden');
+    }
+  }
+});
+</script>
 </body>
 </html>
