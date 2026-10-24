@@ -1,0 +1,6 @@
+{
+  "name": "OrderFlow Pro - Cloud POS & Order Engine",
+  "description": "Enterprise Cloud POS, Order Management, Kitchen Demand Engine, CRM, and Invoice Generator with complete database persistence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

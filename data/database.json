@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "lastUpdated": "2026-10-22T13:31:47.600Z",
+  "settings": {
+    "company": "OrderFlow Pro Global",
+    "phone": "98100 12345",
+    "email": "orders@mahavirtraders.com",
+    "address": "Plot 12, Azadpur Mandi, New Delhi — 110033",
+    "gstin": "07AAFCM1234K1Z5",
+    "logo": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjwvc3ZnPg==",
+    "bankName": "HDFC Bank",
+    "bankAcc": "50200012345678",
+    "bankIfsc": "HDFC0001234",
+    "upi": "mahavirtraders@hdfcbank",
+    "prefix": "MT",
+    "middle": "ORD",
+    "counter": 1001,
+    "palette": "indigo",
+    "theme": "dark"
+  },
+  "tables": {
+    "orders": [],
+    "customers": [
+      {
+        "id": "c1",
+        "name": "Test Merchant",
+        "phone": "9810112233",
+        "area": "Azadpur"
+      }
+    ],
+    "products": [],
+    "categories": [],
+    "units": [],
+    "importExceptions": [],
+    "deletedOrders": [],
+    "usedOrderIds": [],
+    "auditLogs": []
+  }
+}
