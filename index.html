@@ -558,13 +558,39 @@ function handleLogoUpload(input) {
         <div class="grid xl:grid-cols-[minmax(0,1fr)_380px] gap-4">
           <div class="space-y-4">
 
+            <!-- customer (positioned above line items) -->
+            <div class="glass card p-4 sm:p-5 relative z-30">
+              <div class="flex items-center justify-between mb-3">
+                <div class="font-bold flex items-center gap-2"><i class="fa-solid fa-user-tie text-[rgb(var(--acc-rgb))]"></i> Customer</div>
+                <button class="btn btn-soft btn-sm" onclick="Customers.openForm()"><i class="fa-solid fa-plus"></i> New</button>
+              </div>
+              <div class="grid sm:grid-cols-[200px_minmax(0,1fr)] gap-3">
+                <div>
+                  <label class="lbl">Filter by area</label>
+                  <select id="areaFilter" class="field" onchange="OrderUI.renderCustomerSelect()"></select>
+                </div>
+                <div>
+                  <label class="lbl">Select customer</label>
+                  <div class="relative">
+                    <input id="custSearch" class="field pr-10" placeholder="Type shop / name / phone…" oninput="OrderUI.custSearch(this.value)" onfocus="OrderUI.openCustDrop()" autocomplete="off">
+                    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                    <div id="custDrop" class="hidden absolute z-50 mt-1 w-full max-h-72 overflow-auto rounded-xl surface border hairline shadow-2xl"></div>
+                  </div>
+                </div>
+              </div>
+              <div id="custCard" class="hidden mt-3 rounded-xl surface2 border hairline p-3 grid sm:grid-cols-3 gap-3">
+                <div><div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Shop</div><div class="font-semibold text-sm" id="ccShop">—</div></div>
+                <div><div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Phone</div><div class="font-semibold text-sm mono" id="ccPhone">—</div></div>
+                <div><div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Address / Area</div><div class="font-semibold text-sm" id="ccAddr">—</div></div>
+              </div>
+            </div>
+
             <!-- line items -->
             <div class="glass card p-4 sm:p-5 relative z-20">
               <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <div class="font-bold flex items-center gap-2"><i class="fa-solid fa-cart-shopping text-[rgb(var(--acc-rgb))]"></i> Line items</div>
                 <div class="flex items-center gap-2">
-                  <span class="pill surface2 border hairline text-slate-500" id="lockPill"><i class="fa-solid fa-lock text-[9px]"></i> <span id="lockTxt">All</span></span>
-                  <button class="btn btn-ghost btn-sm" onclick="OrderUI.unlock()"><i class="fa-solid fa-lock-open"></i> Reset</button>
+                  <span class="pill surface2 border hairline text-slate-500" id="lockPill"><i class="fa-solid fa-filter text-[9px]"></i> <span id="lockTxt">All Categories</span></span>
                 </div>
               </div>
               <div class="mb-3 flex items-center gap-2">
@@ -578,7 +604,7 @@ function handleLogoUpload(input) {
               </div>
               <div class="relative mb-3">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                <input id="prodSearch" class="field !pl-9" placeholder="Search product to add (or press Enter)…" oninput="OrderUI.prodSearch(this.value)" onkeydown="OrderUI.prodKey(event)">
+                <input id="prodSearch" class="field !pl-9" placeholder="Search product to add (or press Enter)…" oninput="OrderUI.prodSearch(this.value)" onkeydown="OrderUI.prodKey(event)" onfocus="OrderUI.prodSearch(this.value)">
                 <div id="prodDrop" class="hidden absolute z-40 mt-1 w-full max-h-72 overflow-auto rounded-xl surface border hairline shadow-2xl"></div>
               </div>
               <div class="tbl-wrap surface2 border hairline rounded-xl">
@@ -597,33 +623,6 @@ function handleLogoUpload(input) {
               <div id="cartEmpty" class="text-center py-8 text-slate-400 text-sm">
                 <i class="fa-solid fa-cart-flatbed text-2xl mb-2 block opacity-40"></i>
                 No items yet — pick a category and start adding products.
-              </div>
-            </div>
-
-            <!-- customer -->
-            <div class="glass card p-4 sm:p-5 relative z-10">
-              <div class="flex items-center justify-between mb-3">
-                <div class="font-bold flex items-center gap-2"><i class="fa-solid fa-user-tie text-[rgb(var(--acc-rgb))]"></i> Customer</div>
-                <button class="btn btn-soft btn-sm" onclick="Customers.openForm()"><i class="fa-solid fa-plus"></i> New</button>
-              </div>
-              <div class="grid sm:grid-cols-[200px_minmax(0,1fr)] gap-3">
-                <div>
-                  <label class="lbl">Filter by area</label>
-                  <select id="areaFilter" class="field" onchange="OrderUI.renderCustomerSelect()"></select>
-                </div>
-                <div>
-                  <label class="lbl">Select customer</label>
-                  <div class="relative">
-                    <input id="custSearch" class="field pr-10" placeholder="Type shop / name / phone…" oninput="OrderUI.custSearch(this.value)" onfocus="OrderUI.openCustDrop()" autocomplete="off">
-                    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
-                    <div id="custDrop" class="hidden absolute z-40 mt-1 w-full max-h-72 overflow-auto rounded-xl surface border hairline shadow-2xl"></div>
-                  </div>
-                </div>
-              </div>
-              <div id="custCard" class="hidden mt-3 rounded-xl surface2 border hairline p-3 grid sm:grid-cols-3 gap-3">
-                <div><div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Shop</div><div class="font-semibold text-sm" id="ccShop">—</div></div>
-                <div><div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Phone</div><div class="font-semibold text-sm mono" id="ccPhone">—</div></div>
-                <div><div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Address / Area</div><div class="font-semibold text-sm" id="ccAddr">—</div></div>
               </div>
             </div>
 
@@ -666,6 +665,22 @@ function handleLogoUpload(input) {
                 </select>
               </div>
               <div class="mt-3">
+                <label class="lbl">Payment Type</label>
+                <select id="sumPayType" class="field" onchange="OrderUI.onPayTypeChange()">
+                  <option value="cash" selected>Cash / Paid</option>
+                  <option value="credit">Credit / Unpaid</option>
+                </select>
+              </div>
+              <div id="sumPayMethodWrap" class="mt-3">
+                <label class="lbl">Payment Method</label>
+                <select id="sumPayMethod" class="field">
+                  <option value="Cash">Cash in Hand</option>
+                  <option value="UPI">UPI / QR Code</option>
+                  <option value="Bank Transfer">Bank Transfer / NEFT / IMPS</option>
+                  <option value="Cheque">Cheque</option>
+                </select>
+              </div>
+              <div class="mt-3">
                 <label class="lbl">Note</label>
                 <textarea id="sumNote" rows="2" class="field" placeholder="Delivery instructions…"></textarea>
               </div>
@@ -697,9 +712,12 @@ function handleLogoUpload(input) {
             <select id="statusFilter" class="field !w-auto" onchange="Orders.render()">
               <option value="">All statuses</option><option>Pending</option><option>In Process</option><option>Complete</option><option>Cancelled</option>
             </select>
+            <select id="orderAreaFilter" class="field !w-auto" onchange="Orders.render()">
+              <option value="">All Locations / Areas</option>
+            </select>
             <input id="dateFrom" type="date" class="field !w-auto" onchange="Orders.render()" title="From date">
             <input id="dateTo" type="date" class="field !w-auto" onchange="Orders.render()" title="To date">
-            <button class="btn btn-ghost btn-sm" onclick="Orders.resetFilters()"><i class="fa-solid fa-rotate-left"></i></button>
+            <button class="btn btn-ghost btn-sm" onclick="Orders.resetFilters()" title="Reset order filters"><i class="fa-solid fa-rotate-left"></i></button>
             <div class="flex-1"></div>
             <button class="btn btn-soft btn-sm" onclick="Export.ordersXlsx()"><i class="fa-solid fa-file-excel text-emerald-500"></i> Excel</button>
             <button class="btn btn-soft btn-sm" onclick="Export.ordersPdf()"><i class="fa-solid fa-file-pdf text-rose-500"></i> PDF</button>
@@ -752,8 +770,8 @@ function handleLogoUpload(input) {
               <i class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
               <input id="demandCust" class="field !pl-8 !w-auto text-xs" placeholder="Filter customer / shop…" oninput="Demand.render()">
             </div>
-            <button class="btn btn-accent btn-sm" onclick="Demand.orderFiltered()" title="Order filtered demand items">
-              <i class="fa-solid fa-cart-plus mr-1"></i> Order
+            <button class="btn btn-ghost btn-sm" onclick="Demand.resetFilters()" title="Reset all demand filters">
+              <i class="fa-solid fa-rotate-left mr-1"></i> Reset
             </button>
             <div class="flex-1"></div>
             <button class="btn btn-soft btn-sm" onclick="Export.demandXlsx()"><i class="fa-solid fa-file-excel"></i> Excel</button>
@@ -986,6 +1004,7 @@ function handleLogoUpload(input) {
               <div class="flex flex-wrap gap-2 mt-3">
                 <button class="btn btn-accent btn-sm" onclick="Settings.saveFb()"><i class="fa-solid fa-plug"></i> Connect</button>
                 <button class="btn btn-soft btn-sm" onclick="Auth.connectCloud()"><i class="fa-solid fa-user-plus"></i> Create account / Sign in</button>
+                <button class="btn btn-ghost btn-sm" onclick="Admin.firebaseGuide()"><i class="fa-solid fa-book-open text-amber-500"></i> Firebase Guide</button>
                 <button class="btn btn-ghost btn-sm" onclick="Cloud.pushAll()"><i class="fa-solid fa-upload"></i> Force push local</button>
                 <button class="btn btn-ghost btn-sm" onclick="Cloud.pullAll()"><i class="fa-solid fa-download"></i> Pull remote</button>
               </div>
@@ -1045,6 +1064,49 @@ function handleLogoUpload(input) {
           </div>
 
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" id="admStats"></div>
+
+          <!-- Firebase Connection Guidebook Card in Admin Panel -->
+          <div class="glass card p-5 border-2 border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-500/5">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-500 grid place-items-center text-2xl shrink-0"><i class="fa-solid fa-fire"></i></div>
+                <div>
+                  <div class="font-extrabold text-base sm:text-lg flex items-center gap-2">
+                    Firebase Connection Guidebook
+                    <span class="pill bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-[10px]">Cloud Sync Manual</span>
+                  </div>
+                  <div class="text-[12px] text-slate-400">Step-by-step instructions to connect Google Cloud Firestore &amp; Auth for real-time synchronization.</div>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button class="btn btn-soft btn-sm" onclick="Admin.firebaseGuide()"><i class="fa-solid fa-book-open"></i> Full Interactive Guide</button>
+                <button class="btn btn-accent btn-sm" onclick="Nav.go('settings')"><i class="fa-solid fa-sliders"></i> Open Cloud Sync</button>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-3 text-xs mb-3">
+              <div class="rounded-xl surface2 border hairline p-3.5 space-y-1.5">
+                <div class="font-bold text-amber-500 flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-amber-500/20 grid place-items-center text-[10px]">1</span> Create Firebase Project</div>
+                <p class="text-slate-400 leading-relaxed">Visit <a href="https://console.firebase.google.com" target="_blank" class="link underline font-medium">console.firebase.google.com</a>, click <b>Add project</b>, name it (e.g. <span class="mono text-slate-300">orderflow-pro</span>), and proceed through setup.</p>
+              </div>
+              <div class="rounded-xl surface2 border hairline p-3.5 space-y-1.5">
+                <div class="font-bold text-amber-500 flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-amber-500/20 grid place-items-center text-[10px]">2</span> Enable Auth &amp; Firestore</div>
+                <p class="text-slate-400 leading-relaxed">In Firebase Console, go to <b>Authentication → Sign-in method</b> → enable <b>Email/Password</b>. Then under <b>Firestore Database</b> click <b>Create database</b> in test or production mode.</p>
+              </div>
+              <div class="rounded-xl surface2 border hairline p-3.5 space-y-1.5">
+                <div class="font-bold text-amber-500 flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-amber-500/20 grid place-items-center text-[10px]">3</span> Web App &amp; Paste Config</div>
+                <p class="text-slate-400 leading-relaxed">Under <b>Project Settings → General → Your apps</b>, add a <b>Web app (&lt;/&gt;)</b>. Copy the <span class="mono text-slate-300">firebaseConfig</span> JSON and paste it into <b>Settings → Cloud sync</b>, then click <b>Connect</b>!</p>
+              </div>
+            </div>
+
+            <div class="rounded-xl surface2 border hairline p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div class="flex items-center gap-2 text-slate-300">
+                <i class="fa-solid fa-shield-halved text-emerald-500"></i>
+                <span><b>Firestore Security Rules:</b> Recommended production rules for private single-user store data.</span>
+              </div>
+              <button class="btn btn-ghost btn-xs font-semibold" onclick="Admin.showFirebaseRules()"><i class="fa-solid fa-code"></i> View Firestore Rules</button>
+            </div>
+          </div>
 
           <div class="grid lg:grid-cols-2 gap-4">
             <div class="glass card p-5">
@@ -2157,8 +2219,22 @@ const OrderUI = {
     const lockTxt = $('#lockTxt');
     if (lockTxt) lockTxt.textContent = S.catLock || 'All';
   },
-  lock(cat) { S.catLock = cat; OrderUI.renderChips(); OrderUI.prodSearch($('#prodSearch').value); if ($('#prodSearch').value) $('#prodDrop').classList.remove('hidden'); },
-  unlock() { S.catLock = null; $('#custSearch').value = ''; $('#custDrop').classList.add('hidden'); OrderUI.renderChips(); $('#prodSearch').value = ''; $('#prodDrop').classList.add('hidden'); },
+  lock(cat) {
+    S.catLock = cat || null;
+    const sel = $('#catSelect');
+    if (sel && sel.value !== (cat || '')) sel.value = cat || '';
+    OrderUI.renderChips();
+    OrderUI.prodSearch($('#prodSearch').value);
+    $('#prodDrop').classList.remove('hidden');
+  },
+  unlock() {
+    S.catLock = null;
+    const sel = $('#catSelect');
+    if (sel) sel.value = '';
+    OrderUI.renderChips();
+    $('#prodSearch').value = '';
+    $('#prodDrop').classList.add('hidden');
+  },
 
   renderCustomerSelect() {
     const area = $('#areaFilter').value;
@@ -2196,17 +2272,17 @@ const OrderUI = {
 
   prodSearch(v) {
     const q = (v || '').toLowerCase().trim();
-    const list = S.products.filter(p => (!S.catLock || p.category === S.catLock) &&
-      (!q || (p.name + ' ' + p.category).toLowerCase().includes(q))).slice(0, 60);
+    const list = S.products.filter(p => (!S.catLock || (p.category || '').toLowerCase() === S.catLock.toLowerCase()) &&
+      (!q || (p.name + ' ' + (p.category || '')).toLowerCase().includes(q))).slice(0, 60);
     const drop = $('#prodDrop');
     if (!q && !S.catLock) { drop.classList.add('hidden'); return; }
-    if (!list.length) { drop.innerHTML = `<div class="p-4 text-sm text-slate-400 text-center">No product match. <span class="link" onclick="Products.openForm()">Add product</span></div>`; drop.classList.remove('hidden'); return; }
+    if (!list.length) { drop.innerHTML = `<div class="p-4 text-sm text-slate-400 text-center">${S.catLock ? `No products found in category "${esc(S.catLock)}".` : 'No product match.'} <span class="link" onclick="Products.openForm()">Add product</span></div>`; drop.classList.remove('hidden'); return; }
     drop.innerHTML = list.map(p => `
       <button class="w-full text-left px-3 py-2.5 hover:bg-[rgb(var(--acc-rgb)/.1)] flex items-center gap-3 border-b hairline last:border-0" onclick="OrderUI.addProduct('${p.id}')">
         <div class="w-8 h-8 rounded-lg grid place-items-center shrink-0 surface2 border hairline text-[10px] font-bold mono">${esc((p.category || '?').slice(0, 2).toUpperCase())}</div>
         <div class="min-w-0 flex-1">
           <div class="font-semibold text-sm truncate">${esc(p.name)}</div>
-          <div class="text-[11px] text-slate-400 truncate">${esc(p.category)} · ${money(p.rate)} / ${esc(p.unit)}</div>
+          <div class="text-[11px] text-slate-400 truncate">${esc(p.category || 'General')} · ${money(p.rate)} / ${esc(p.unit)}</div>
         </div>
         <i class="fa-solid fa-plus text-[rgb(var(--acc-rgb))] text-xs"></i>
       </button>`).join('');
@@ -2278,7 +2354,27 @@ const OrderUI = {
     if (tr) tr.children[4].innerHTML = money(S.cart[i].amount);
   },
   remove(i) { S.cart.splice(i, 1); OrderUI.renderCart(); },
-  clear() { S.cart = []; S._cust = null; OrderUI.editId = null; $('#custSearch').value = ''; $('#custCard').classList.add('hidden'); $('#sumNote').value = ''; $('#sumDisc').value = 0; OrderUI.renderCart(); OrderUI.rollId(); },
+
+  onPayTypeChange() {
+    const pt = $('#sumPayType') ? $('#sumPayType').value : 'cash';
+    const wrap = $('#sumPayMethodWrap');
+    if (wrap) wrap.classList.toggle('hidden', pt !== 'cash');
+  },
+
+  clear() {
+    S.cart = [];
+    S._cust = null;
+    OrderUI.editId = null;
+    $('#custSearch').value = '';
+    $('#custCard').classList.add('hidden');
+    $('#sumNote').value = '';
+    $('#sumDisc').value = 0;
+    if ($('#sumPayType')) $('#sumPayType').value = 'cash';
+    if ($('#sumPayMethod')) $('#sumPayMethod').value = 'Cash';
+    OrderUI.onPayTypeChange();
+    OrderUI.renderCart();
+    OrderUI.rollId();
+  },
 
   recalc() {
     const sub = S.cart.reduce((a, b) => a + num(b.amount), 0);
@@ -2310,6 +2406,8 @@ const OrderUI = {
     const t = S._totals || { sub: 0, disc: 0, tax: 0, total: 0, taxP: 0 };
     const nowTs = Date.now();
     const status = $('#sumStatus').value;
+    const paymentType = $('#sumPayType') ? $('#sumPayType').value : 'cash';
+    const paymentMethod = paymentType === 'cash' ? ($('#sumPayMethod') ? $('#sumPayMethod').value : 'Cash') : 'Credit';
 
     if (OrderUI.editId) {
       const o = S.orders.find(x => x.id === OrderUI.editId);
@@ -2317,11 +2415,11 @@ const OrderUI = {
         Object.assign(o, {
           customerId: c.id, customerName: c.name, shop: c.shop, phone: c.phone, area: c.area, address: c.address,
           items: clone(S.cart), subtotal: t.sub, discount: t.disc, tax: t.tax, taxPct: t.taxP, total: t.total,
-          status, note: $('#sumNote').value.trim(), updatedAt: nowTs, dateStr: fmtDate(o.createdAt),
+          status, paymentType, paymentMethod, note: $('#sumNote').value.trim(), updatedAt: nowTs, dateStr: fmtDate(o.createdAt),
         });
         await Data.put('orders', o);
         await Data.refresh();
-        Admin.log('order.update', `${o.oid} · ${money(t.total)}`);
+        Admin.log('order.update', `${o.oid} · ${money(t.total)} · ${paymentType}`);
         toast(`Order ${o.oid} updated`, 'ok');
         OrderUI.clear(); Nav.go('orders');
       }
@@ -2333,7 +2431,7 @@ const OrderUI = {
       id: uid(), oid,
       customerId: c.id, customerName: c.name, shop: c.shop, phone: c.phone, area: c.area, address: c.address,
       items: clone(S.cart), subtotal: t.sub, discount: t.disc, tax: t.tax, taxPct: t.taxP, total: t.total,
-      status, note: $('#sumNote').value.trim(),
+      status, paymentType, paymentMethod, note: $('#sumNote').value.trim(),
       createdAt: nowTs, dateStr: fmtDate(nowTs), updatedAt: nowTs, by: (S.user && S.user.email) || 'local',
     };
     await Data.put('orders', order);
@@ -2341,15 +2439,20 @@ const OrderUI = {
     S.settings.counter = counter + 1;
     await Settings.persist();
     await Data.refresh();
-    Admin.log('order.create', `${oid} · ${c.shop || c.name} · ${money(t.total)}`);
+    Admin.log('order.create', `${oid} · ${c.shop || c.name} · ${money(t.total)} · ${paymentType}`);
     UI.modal(`
       <div class="p-7 text-center">
         <div class="w-16 h-16 mx-auto rounded-2xl bg-emerald-500/12 text-emerald-500 grid place-items-center text-2xl mb-4"><i class="fa-solid fa-check"></i></div>
         <div class="font-extrabold text-xl">Order saved</div>
         <div class="mono font-bold text-[rgb(var(--acc-rgb))] text-lg mt-1">${esc(oid)}</div>
         <div class="text-sm text-slate-500 mt-1">${esc(c.shop || c.name)} · ${money(t.total)}</div>
-        <div class="grid grid-cols-3 gap-2 mt-6">
-          <button class="btn btn-accent" onclick="UI.closeModal(this);Invoice.open('${order.id}')"><i class="fa-solid fa-print"></i> Invoice</button>
+        <div class="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-xs font-semibold ${paymentType === 'cash' ? 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/12 text-amber-600 dark:text-amber-400'}">
+          <i class="fa-solid ${paymentType === 'cash' ? 'fa-wallet' : 'fa-clock'} text-[10px]"></i>
+          ${paymentType === 'cash' ? `Paid (${paymentMethod})` : 'Credit / Unpaid'}
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-6">
+          <button class="btn btn-accent" onclick="UI.closeModal(this);OrderUI.clear();Nav.go('order')"><i class="fa-solid fa-plus"></i> Add New Order</button>
+          <button class="btn btn-soft" onclick="UI.closeModal(this);Invoice.open('${order.id}')"><i class="fa-solid fa-print"></i> Invoice</button>
           <button class="btn btn-soft" onclick="UI.closeModal(this);Invoice.whatsapp('${order.id}')"><i class="fa-brands fa-whatsapp"></i> Share</button>
           <button class="btn btn-ghost" onclick="UI.closeModal(this);Nav.go('orders')"><i class="fa-solid fa-list"></i> History</button>
         </div>
@@ -2370,6 +2473,9 @@ const OrderUI = {
     $('#ccAddr').textContent = `${c.address || '—'}${c.area ? ' · ' + c.area : ''}`;
     $('#sumDisc').value = o.discount || 0; $('#sumTax').value = o.taxPct || 0;
     $('#sumStatus').value = o.status; $('#sumNote').value = o.note || '';
+    if ($('#sumPayType')) $('#sumPayType').value = o.paymentType || 'cash';
+    if ($('#sumPayMethod')) $('#sumPayMethod').value = o.paymentMethod || 'Cash';
+    OrderUI.onPayTypeChange();
     OrderUI.renderCart(); OrderUI.rollId();
     Nav.go('order');
     toast(`Editing ${o.oid} — save to apply changes`, 'info');
@@ -2381,10 +2487,12 @@ const Orders = {
   filtered() {
     const q = ($('#orderSearch') ? $('#orderSearch').value : '').toLowerCase().trim();
     const st = $('#statusFilter') ? $('#statusFilter').value : '';
+    const area = $('#orderAreaFilter') ? $('#orderAreaFilter').value.trim() : '';
     const from = $('#dateFrom') ? $('#dateFrom').value : '';
     const to = $('#dateTo') ? $('#dateTo').value : '';
     return S.orders.filter(o => {
       if (st && o.status !== st) return false;
+      if (area && (o.area || '').trim() !== area) return false;
       if (from && dayKey(o.createdAt) < from) return false;
       if (to && dayKey(o.createdAt) > to) return false;
       if (q) {
@@ -2401,10 +2509,20 @@ const Orders = {
     Orders.render();
   },
   resetFilters() {
-    $('#orderSearch').value = ''; $('#statusFilter').value = ''; $('#dateFrom').value = ''; $('#dateTo').value = '';
+    if ($('#orderSearch')) $('#orderSearch').value = '';
+    if ($('#statusFilter')) $('#statusFilter').value = '';
+    if ($('#orderAreaFilter')) $('#orderAreaFilter').value = '';
+    if ($('#dateFrom')) $('#dateFrom').value = '';
+    if ($('#dateTo')) $('#dateTo').value = '';
     Orders.render();
   },
   render() {
+    const elArea = $('#orderAreaFilter');
+    if (elArea) {
+      const curArea = elArea.value;
+      const areas = Array.from(new Set(S.customers.map(c => (c.area || '').trim()).concat(S.orders.map(o => (o.area || '').trim())).filter(Boolean))).sort();
+      elArea.innerHTML = '<option value="">All Locations / Areas</option>' + areas.map(a => `<option value="${esc(a)}"${a === curArea ? ' selected' : ''}>${esc(a)}</option>`).join('');
+    }
     const list = Orders.filtered();
     const pages = Math.max(1, Math.ceil(list.length / S.pageSize));
     if (S.ordersPage > pages) S.ordersPage = pages;
@@ -2417,9 +2535,15 @@ const Orders = {
         <td><input type="checkbox" class="w-4 h-4 accent-[rgb(var(--acc-rgb))]" ${sel ? 'checked' : ''} onchange="Orders.toggle('${o.id}',this.checked)"></td>
         <td><span class="mono font-bold text-[13px]">${esc(o.oid)}</span><div class="text-[10px] text-slate-400">${(o.items || []).length} line items</div></td>
         <td class="mono whitespace-nowrap">${fmtDate(o.createdAt)}<div class="text-[10px] text-slate-400">${timeAgo(o.createdAt)}</div></td>
-        <td><div class="font-semibold text-sm truncate max-w-[190px]">${esc(o.shop || o.customerName)}</div><div class="text-[11px] text-slate-400 truncate max-w-[190px]">${esc(o.customerName)} · <span class="mono">${esc(o.phone || '')}</span></div></td>
+        <td>
+          <div class="font-semibold text-sm truncate max-w-[190px]">${esc(o.shop || o.customerName)}</div>
+          <div class="text-[11px] text-slate-400 truncate max-w-[190px]">${esc(o.customerName)} · <span class="mono">${esc(o.phone || '')}</span> ${o.area ? '· ' + esc(o.area) : ''}</div>
+        </td>
         <td class="text-right mono font-semibold">${qty}</td>
-        <td class="text-right mono font-bold">${money(o.total)}</td>
+        <td class="text-right mono font-bold">
+          <div>${money(o.total)}</div>
+          <div class="text-[10px] font-semibold ${o.paymentType === 'cash' ? 'text-emerald-500' : 'text-amber-500'}">${o.paymentType === 'cash' ? (o.paymentMethod || 'Cash') : 'Credit'}</div>
+        </td>
         <td>
           <select class="field !py-1 !px-2 !text-xs !w-full" onchange="Orders.setStatus('${o.id}',this.value)" style="border-color:${({ Pending: '#f59e0b', 'In Process': '#3b82f6', Complete: '#10b981', Cancelled: '#ef4444' })[o.status]}">
             ${['Pending', 'In Process', 'Complete', 'Cancelled'].map(s => `<option${s === o.status ? ' selected' : ''}>${s}</option>`).join('')}
@@ -2496,6 +2620,7 @@ const Orders = {
           <div class="text-xs mt-1 flex justify-between"><span class="text-slate-500">Created</span><span class="mono font-semibold">${fmtDateTime(o.createdAt)}</span></div>
           <div class="text-xs flex justify-between"><span class="text-slate-500">Updated</span><span class="mono font-semibold">${fmtDateTime(o.updatedAt || o.createdAt)}</span></div>
           <div class="text-xs flex justify-between"><span class="text-slate-500">Status</span><span class="pill st-${o.status.replace(/\s/g, '')}">${o.status}</span></div>
+          <div class="text-xs flex justify-between"><span class="text-slate-500">Payment</span><b class="${o.paymentType === 'cash' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}">${o.paymentType === 'cash' ? ('Paid (' + (o.paymentMethod || 'Cash') + ')') : 'Credit / Unpaid'}</b></div>
           <div class="text-xs flex justify-between"><span class="text-slate-500">By</span><span class="mono">${esc(o.by || '—')}</span></div>
         </div>
       </div>
@@ -3258,15 +3383,33 @@ const Demand = {
         m.val += num(it.amount);
         m.orders.add(o.oid);
         m.units[it.unit || '—'] = (m.units[it.unit || '—'] || 0) + num(it.qty);
-        m.shops.push({ oid: o.oid, shop: o.shop || o.customerName, customer: o.customerName, qty: num(it.qty), unit: it.unit, date: o.createdAt, status: o.status, phone: o.phone });
+        m.shops.push({
+          orderId: o.id,
+          oid: o.oid,
+          itemId: it.id || '',
+          itemName: it.name,
+          processed: !!it.processed,
+          shop: o.shop || o.customerName,
+          customer: o.customerName,
+          qty: num(it.qty),
+          unit: it.unit,
+          rate: num(it.rate),
+          amount: num(it.amount),
+          date: o.createdAt,
+          status: o.status,
+          phone: o.phone
+        });
       });
     });
     return Object.values(map).sort((a, b) => b.qty - a.qty || b.val - a.val);
   },
   render() {
     const cats = S.categories.map(c => c.name);
-    const dc = $('#demandCat'); const cur = dc.value;
-    dc.innerHTML = `<option value="">All categories</option>` + cats.map(c => `<option${c === cur ? ' selected' : ''}>${esc(c)}</option>`).join('');
+    const dc = $('#demandCat');
+    if (dc) {
+      const cur = dc.value;
+      dc.innerHTML = `<option value="">All categories</option>` + cats.map(c => `<option${c === cur ? ' selected' : ''}>${esc(c)}</option>`).join('');
+    }
     const da = $('#demandArea');
     if (da) {
       const curArea = da.value;
@@ -3274,7 +3417,7 @@ const Demand = {
       da.innerHTML = `<option value="">All locations/areas</option>` + areaList.map(a => `<option value="${esc(a)}"${a === curArea ? ' selected' : ''}>${esc(a)}</option>`).join('');
     }
     const q = ($('#demandSearch') ? $('#demandSearch').value : '').toLowerCase().trim();
-    const cat = dc.value;
+    const cat = dc ? dc.value : '';
     const rows = Demand.agg().filter(r => (!cat || r.category === cat) && (!q || (r.name + ' ' + r.category).toLowerCase().includes(q)));
     $('#demandBody').innerHTML = rows.map((r, i) => `
       <tr>
@@ -3287,83 +3430,92 @@ const Demand = {
         <td class="text-right mono font-bold">${money(r.val)}</td>
         <td class="text-right">
           <div class="inline-flex items-center gap-1 justify-end">
-            <button class="btn btn-soft btn-xs text-[rgb(var(--acc-rgb))]" onclick="Demand.orderItem('${esc(r.name).replace(/'/g, "\\'")}')" title="Create order for this item"><i class="fa-solid fa-cart-plus"></i> Order</button>
-            <button class="btn btn-ghost btn-xs" onclick="Demand.who('${esc(r.name).replace(/'/g, "\\'")}')" title="View customer orders"><i class="fa-solid fa-users"></i> Who</button>
+            <button class="btn btn-soft btn-xs text-[rgb(var(--acc-rgb))]" onclick="Demand.who('${esc(r.name).replace(/'/g, "\\'")}')" title="View customer orders and dispatch"><i class="fa-solid fa-users mr-1"></i> Customers (${r.orders.size})</button>
           </div>
         </td>
       </tr>`).join('') || `<tr><td colspan="8"><div class="text-center py-14 text-slate-400"><i class="fa-solid fa-boxes-stacked text-3xl block mb-2 opacity-40"></i>No open demand — every order is complete or cancelled</div></td></tr>`;
     $('#demandMeta').innerHTML = `${rows.length} items · ${rows.reduce((a, r) => a + r.qty, 0).toFixed(0)} units to dispatch · ${money(rows.reduce((a, r) => a + r.val, 0))}`;
   },
-  orderFiltered() {
-    const q = ($('#demandSearch') ? $('#demandSearch').value : '').toLowerCase().trim();
-    const dc = $('#demandCat');
-    const cat = dc ? dc.value : '';
-    const rows = Demand.agg().filter(r => (!cat || r.category === cat) && (!q || (r.name + ' ' + r.category).toLowerCase().includes(q)));
-    if (!rows.length) {
-      return toast('No demand items found matching current filters', 'warn');
-    }
-    // Load filtered demand items directly into order cart
-    S.cart = rows.map(r => {
-      const p = S.products.find(x => x.name.toLowerCase() === r.name.toLowerCase());
-      const u = Object.keys(r.units)[0] || (p ? p.unit : 'pcs');
-      const rate = p ? p.price : (r.qty ? (r.val / r.qty) : 0);
-      return {
-        pid: p ? p.pid : uid(),
-        name: r.name,
-        category: r.category,
-        qty: Number(r.qty) || 1,
-        unit: u,
-        price: Number(rate) || 0,
-        amount: Number(rate) * (Number(r.qty) || 1),
-        custom: !p
-      };
-    });
-    // Check if customer filter matched an active customer
-    const custFilter = ($('#demandCust') ? $('#demandCust').value : '').toLowerCase().trim();
-    if (custFilter) {
-      const matchedCust = S.customers.find(c =>
-        (c.name && c.name.toLowerCase().includes(custFilter)) ||
-        (c.shop && c.shop.toLowerCase().includes(custFilter)) ||
-        (c.phone && c.phone.toLowerCase().includes(custFilter))
-      );
-      if (matchedCust) {
-        OrderUI.selectCustomer(matchedCust.cid);
-      }
-    }
-    Nav.go('order');
-    OrderUI.renderCart();
-    toast(`Loaded ${rows.length} filtered demand items into order!`, 'success');
-  },
-  orderItem(name) {
-    const row = Demand.agg().find(r => r.name.toLowerCase() === String(name).toLowerCase());
-    if (!row) return toast('Item no longer in demand', 'warn');
-    const p = S.products.find(x => x.name.toLowerCase() === row.name.toLowerCase());
-    const u = Object.keys(row.units)[0] || (p ? p.unit : 'pcs');
-    const rate = p ? p.price : (row.qty ? (row.val / row.qty) : 0);
-    // Add to cart at beginning (newest first)
-    S.cart.unshift({
-      pid: p ? p.pid : uid(),
-      name: row.name,
-      category: row.category,
-      qty: Number(row.qty) || 1,
-      unit: u,
-      price: Number(rate) || 0,
-      amount: Number(rate) * (Number(row.qty) || 1),
-      custom: !p
-    });
-    Nav.go('order');
-    OrderUI.renderCart();
-    toast(`Added ${row.name} (${row.qty} ${u}) to order!`, 'success');
+  resetFilters() {
+    if ($('#demandSearch')) $('#demandSearch').value = '';
+    if ($('#demandCat')) $('#demandCat').value = '';
+    if ($('#demandArea')) $('#demandArea').value = '';
+    if ($('#demandCust')) $('#demandCust').value = '';
+    Demand.render();
+    toast('Demand filters reset', 'ok');
   },
   openOrder(oid) {
     UI.closeModal();
-    Orders.view(oid);
+    const o = S.orders.find(x => x.oid === oid || x.id === oid);
+    if (o) Orders.detail(o.id);
+    else toast('Order not found', 'warn');
   },
-  who(name) {
+  async toggleItemProcessed(orderId, itemId, itemName, isChecked, demandName) {
+    const o = S.orders.find(x => x.id === orderId);
+    if (!o) return toast('Order not found', 'warn');
+    const it = (o.items || []).find(i => (itemId && i.id === itemId) || (i.name || '').toLowerCase() === itemName.toLowerCase());
+    if (!it) return toast('Item not found in order', 'warn');
+    it.processed = isChecked;
+    o.updatedAt = Date.now();
+    await Data.put('orders', o);
+    await Data.refresh();
+    Admin.log('order.item_process', `${itemName} in ${o.oid} marked ${isChecked ? 'processed' : 'unprocessed'}`);
+    toast(`${itemName} marked ${isChecked ? 'processed' : 'pending'} in ${o.oid}`, 'ok');
+    Demand.render();
+    Demand.who(demandName, true);
+  },
+  async deleteItemFromOrder(orderId, itemId, itemName, demandName) {
+    const o = S.orders.find(x => x.id === orderId);
+    if (!o) return toast('Order not found', 'warn');
+    const idx = (o.items || []).findIndex(i => (itemId && i.id === itemId) || (i.name || '').toLowerCase() === itemName.toLowerCase());
+    if (idx === -1) return toast('Item not found in order', 'warn');
+    const it = o.items[idx];
+    const itemAmt = num(it.amount);
+
+    if (!await UI.confirm('Remove item from invoice?', `Remove <b>“${esc(it.name)}”</b> (${it.qty} ${esc(it.unit || '')}) from order <b>${esc(o.oid)}</b> (${esc(o.shop || o.customerName)})?<br><br>The item will be removed from the invoice and <b>${money(itemAmt)}</b> will be deducted from the customer's total bill.`)) {
+      return;
+    }
+
+    o.items.splice(idx, 1);
+    const subtotal = o.items.reduce((sum, item) => sum + num(item.amount), 0);
+    const disc = num(o.discount || 0);
+    const taxPct = num(o.taxPct || 0);
+    const taxable = Math.max(0, subtotal - disc);
+    const tax = Math.round(taxable * taxPct / 100 * 100) / 100;
+    const total = Math.round((taxable + tax) * 100) / 100;
+
+    o.subtotal = Math.round(subtotal * 100) / 100;
+    o.tax = tax;
+    o.total = total;
+    o.updatedAt = Date.now();
+
+    await Data.put('orders', o);
+    await Data.refresh();
+    Admin.log('order.item_delete', `${it.name} removed from ${o.oid} · Deducted ${money(itemAmt)}`);
+    toast(`Removed ${it.name} from ${o.oid} · Bill total updated to ${money(o.total)}`, 'ok');
+
+    Demand.render();
+
+    const stillHasDemand = Demand.agg().find(r => r.name.toLowerCase() === demandName.toLowerCase());
+    if (stillHasDemand && stillHasDemand.shops.length > 0) {
+      Demand.who(demandName, true);
+    } else {
+      $$('.mask[data-who]').forEach(m => m.remove());
+      toast(`All demand for “${demandName}” resolved!`, 'ok');
+    }
+  },
+  who(name, isRefresh) {
     const row = Demand.agg().find(r => r.name.toLowerCase() === String(name).toLowerCase());
-    if (!row) return toast('Item no longer in open demand', 'warn');
+    if (!row) {
+      $$('.mask[data-who]').forEach(m => m.remove());
+      return toast('Item no longer in open demand', 'warn');
+    }
     const shops = row.shops.sort((a, b) => b.date - a.date);
-    UI.open(`Who ordered — ${esc(row.name)}`, `
+    if (isRefresh) {
+      const existing = document.querySelector('.mask[data-who]');
+      if (existing) existing.remove();
+    }
+    UI.open(`Customer Demand — ${esc(row.name)}`, `
       <div class="grid grid-cols-3 gap-2 mb-4">
         <div class="rounded-xl surface2 border hairline p-3 text-center"><div class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Total qty</div><div class="mono font-extrabold text-xl">${row.qty}</div></div>
         <div class="rounded-xl surface2 border hairline p-3 text-center"><div class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Orders</div><div class="mono font-extrabold text-xl">${row.orders.size}</div></div>
@@ -3372,15 +3524,41 @@ const Demand = {
       <div class="rounded-xl border hairline overflow-hidden">
         <table class="w-full text-sm">
           <thead><tr class="text-[10px] uppercase tracking-wider text-slate-400 bg-slate-50 dark:bg-slate-800/50">
-            <th class="text-left px-3 py-2">Shop</th><th class="text-left px-3 py-2">Order</th><th class="text-right px-3 py-2">Qty</th><th class="text-left px-3 py-2">Date</th><th class="text-left px-3 py-2">Status</th></tr></thead>
-          <tbody>${shops.map(s => `<tr class="border-t hairline">
-            <td class="px-3 py-2"><div class="font-semibold">${esc(s.shop)}</div><div class="text-[11px] text-slate-400 mono">${esc(s.phone || '')}</div></td>
-            <td class="px-3 py-2"><button class="btn btn-xs btn-ghost mono font-bold text-accent" onclick="Demand.openOrder(\'${s.oid}\')">${esc(s.oid)} <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i></button></td>
-            <td class="px-3 py-2 text-right mono font-bold">${s.qty} ${esc(s.unit)}</td>
-            <td class="px-3 py-2 mono">${fmtDate(s.date)}</td>
-            <td class="px-3 py-2"><span class="pill st-${s.status.replace(/\s/g, '')}">${s.status}</span></td></tr>`).join('')}</tbody>
+            <th class="text-left px-3 py-2">Customer / Shop</th>
+            <th class="text-left px-3 py-2">Order</th>
+            <th class="text-right px-3 py-2">Qty</th>
+            <th class="text-right px-3 py-2">Amount</th>
+            <th class="text-center px-3 py-2">Processed</th>
+            <th class="text-center px-3 py-2">Action</th>
+          </tr></thead>
+          <tbody>${shops.map(s => `
+            <tr class="border-t hairline ${s.processed ? 'bg-emerald-500/5' : ''}">
+              <td class="px-3 py-2">
+                <div class="font-semibold text-sm ${s.processed ? 'line-through text-slate-400' : ''}">${esc(s.shop)}</div>
+                <div class="text-[11px] text-slate-400 mono">${esc(s.customer)} · ${esc(s.phone || '—')}</div>
+              </td>
+              <td class="px-3 py-2">
+                <button class="btn btn-xs btn-ghost mono font-bold text-accent" onclick="Demand.openOrder(\'${s.oid}\')">${esc(s.oid)} <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i></button>
+                <div class="text-[10px] text-slate-400">${fmtDate(s.date)}</div>
+              </td>
+              <td class="px-3 py-2 text-right mono font-bold">${s.qty} ${esc(s.unit)}</td>
+              <td class="px-3 py-2 text-right mono font-semibold text-slate-600 dark:text-slate-300">${money(s.amount)}</td>
+              <td class="px-3 py-2 text-center">
+                <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                  <input type="checkbox" class="w-4 h-4 accent-emerald-500 rounded" ${s.processed ? 'checked' : ''} onchange="Demand.toggleItemProcessed('${s.orderId}','${s.itemId}','${esc(s.itemName).replace(/'/g, "\\'")}',this.checked,'${esc(row.name).replace(/'/g, "\\'")}')">
+                  <span class="text-xs ${s.processed ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-400'}">${s.processed ? 'Processed' : 'Pending'}</span>
+                </label>
+              </td>
+              <td class="px-3 py-2 text-center">
+                <button class="btn btn-ghost btn-xs text-red-500 hover:bg-red-500/10" onclick="Demand.deleteItemFromOrder('${s.orderId}','${s.itemId}','${esc(s.itemName).replace(/'/g, "\\'")}','${esc(row.name).replace(/'/g, "\\'")}')" title="Delete product from invoice and deduct total bill">
+                  <i class="fa-solid fa-trash-can mr-1"></i> Delete
+                </button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
         </table>
-      </div>`, `<button class="btn btn-ghost" onclick="UI.closeModal(this)">Close</button><button class="btn btn-soft" onclick="Export.demandRowPdf('${esc(row.name).replace(/'/g, "\\'")}')"><i class="fa-solid fa-file-pdf"></i> PDF</button>`, { width: '44rem' });
+      </div>`,
+      `<button class="btn btn-ghost" onclick="UI.closeModal(this)">Close</button><button class="btn btn-soft" onclick="Export.demandRowPdf('${esc(row.name).replace(/'/g, "\\'")}')"><i class="fa-solid fa-file-pdf"></i> PDF</button>`, { width: '48rem', attr: 'who' });
   },
 };
 
@@ -3761,7 +3939,7 @@ const Invoice = {
           <div style="font-size:9px;font-weight:800;letter-spacing:.1em;color:#6b7280">ORDER SUMMARY</div>
           <div style="font-size:11px;margin-top:5px;display:flex;justify-content:space-between"><span>Line items</span><b>${(o.items || []).length}</b></div>
           <div style="font-size:11px;display:flex;justify-content:space-between"><span>Total qty</span><b>${(o.items || []).reduce((a, b) => a + num(b.qty), 0)}</b></div>
-          <div style="font-size:11px;display:flex;justify-content:space-between"><span>Payment</span><b>Credit / UPI</b></div>
+          <div style="font-size:11px;display:flex;justify-content:space-between"><span>Payment</span><b style="color:${o.paymentType === 'cash' ? '#059669' : '#d97706'}">${o.paymentType === 'cash' ? ('Paid (' + (o.paymentMethod || 'Cash') + ')') : 'Credit / Unpaid'}</b></div>
         </div>
       </div>
 
@@ -3843,7 +4021,7 @@ const Invoice = {
       <div style="font-size:11px;display:flex;justify-content:space-between"><span>Discount</span><span style="font-family:'JetBrains Mono',monospace">- ${money(o.discount || 0)}</span></div>
       ${num(o.tax) ? `<div style="font-size:11px;display:flex;justify-content:space-between"><span>Tax ${num(o.taxPct)}%</span><span style="font-family:'JetBrains Mono',monospace">${money(o.tax)}</span></div>` : ''}
       <div style="font-size:14px;font-weight:800;display:flex;justify-content:space-between;margin-top:4px;border-top:1px solid #000;padding-top:4px"><span>TOTAL</span><span style="font-family:'JetBrains Mono',monospace">${money(o.total)}</span></div>
-      <div style="font-size:10px;margin-top:4px">Status: ${o.status} · Items: ${(o.items || []).length}</div>
+      <div style="font-size:10px;margin-top:4px">Status: ${o.status} · Payment: <b>${o.paymentType === 'cash' ? ('Paid (' + (o.paymentMethod || 'Cash') + ')') : 'Credit / Unpaid'}</b> · Items: ${(o.items || []).length}</div>
       ${qr ? `<div style="text-align:center;margin-top:6px"><img src="${qr.img}" style="width:38mm;height:38mm" onerror="this.style.display='none'"><div style="font-size:9px;font-family:'JetBrains Mono',monospace">${esc(S.settings.upi)}</div></div>` : ''}
       <div style="text-align:center;font-size:10px;margin-top:6px;border-top:1px dashed #000;padding-top:5px">
         ${esc(S.settings.footer || 'Thank you for your business!')}
@@ -3912,6 +4090,7 @@ const Invoice = {
     const lines = (o.items || []).map((it, i) => `${i + 1}. ${it.name} — ${it.qty} ${it.unit} × ${money(it.rate)} = ${money(it.amount)}`).join('\n');
     return `*${st.company}*\n${st.address}\nPh: ${st.phone}\n\n` +
       `*TAX INVOICE ${o.oid}*\nDate: ${fmtDate(o.createdAt)}\nTo: ${o.shop || o.customerName}${o.phone ? ' (' + o.phone + ')' : ''}\n` +
+      `Payment: ${o.paymentType === 'cash' ? ('Paid (' + (o.paymentMethod || 'Cash') + ')') : 'Credit / Unpaid'}\n` +
       `────────────────\n${lines}\n────────────────\n` +
       `Subtotal: ${money(o.subtotal)}\nDiscount: ${money(o.discount || 0)}\n` +
       (num(o.tax) ? `Tax ${num(o.taxPct)}%: ${money(o.tax)}\n` : '') +
@@ -3969,8 +4148,8 @@ const Invoice = {
 
     doc.setTextColor(20, 20, 20);
     doc.setFillColor(245, 247, 250);
-    doc.roundedRect(40, 90, (W - 90) / 2, 74, 6, 6, 'F');
-    doc.roundedRect(40 + (W - 90) / 2 + 10, 90, (W - 90) / 2, 74, 6, 6, 'F');
+    doc.roundedRect(40, 90, (W - 90) / 2, 78, 6, 6, 'F');
+    doc.roundedRect(40 + (W - 90) / 2 + 10, 90, (W - 90) / 2, 78, 6, 6, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(110, 118, 130);
     doc.text('BILL TO', 50, 106);
     doc.text('ORDER INFO', 50 + (W - 90) / 2 + 10, 106);
@@ -3981,9 +4160,9 @@ const Invoice = {
     doc.text(`Phone: ${o.phone || '—'}`, 50, 149);
     doc.text(doc.splitTextToSize(`${o.address || ''}${o.area ? ', ' + o.area : ''}`, 220).slice(0, 2), 50, 160);
     doc.text(`Order ID: ${o.oid}`, 50 + (W - 90) / 2 + 10, 122);
-    doc.text(`Status: ${o.status}`, 50 + (W - 90) / 2 + 10, 136);
-    doc.text(`Line items: ${(o.items || []).length}`, 50 + (W - 90) / 2 + 10, 149);
-    doc.text(`Total qty: ${(o.items || []).reduce((a, b) => a + num(b.qty), 0)}`, 50 + (W - 90) / 2 + 10, 162);
+    doc.text(`Status: ${o.status}`, 50 + (W - 90) / 2 + 10, 135);
+    doc.text(`Payment: ${o.paymentType === 'cash' ? ('Paid (' + (o.paymentMethod || 'Cash') + ')') : 'Credit / Unpaid'}`, 50 + (W - 90) / 2 + 10, 148);
+    doc.text(`Total items: ${(o.items || []).length} (${(o.items || []).reduce((a, b) => a + num(b.qty), 0)} units)`, 50 + (W - 90) / 2 + 10, 161);
 
     const body = (o.items || []).map((it, i) => [i + 1, it.name + (it.category ? `\n${it.category}` : ''), it.unit, String(it.qty), pdfMoney(it.rate), pdfMoney(it.amount)]);
     doc.autoTable({
@@ -4468,7 +4647,116 @@ const Admin = {
     toast('Recycle bin emptied', 'warn');
   },
 
-  /* ---- help ---- */
+  /* ---- help & guidebook ---- */
+  firebaseGuide() {
+    UI.open('Firebase Connection Guidebook', `
+      <div class="space-y-4 text-xs leading-relaxed max-h-[75vh] overflow-y-auto pr-1">
+        <div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+          <div class="font-bold text-sm text-amber-500 flex items-center gap-2 mb-1">
+            <i class="fa-solid fa-fire"></i> How Firebase Cloud Sync Works
+          </div>
+          <p class="text-slate-400 leading-relaxed">
+            OrderFlow Pro utilizes a <b>Local-First + Cloud-Synchronized Architecture</b>. All orders, customer records, and product line items are stored instantly on this device in IndexedDB (Dexie) so work is never lost even offline. When Firebase is connected, records sync bi-directionally in real-time across all your phones, tablets, and POS counters.
+          </p>
+        </div>
+
+        <div class="space-y-3">
+          <div class="rounded-xl surface2 border hairline p-3.5">
+            <div class="font-bold text-sm text-[rgb(var(--acc-rgb))] mb-1 flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-[rgb(var(--acc-rgb)/.2)] text-[rgb(var(--acc-rgb))] grid place-items-center text-xs">1</span>
+              Create a Firebase Project
+            </div>
+            <ol class="list-decimal list-inside space-y-1 text-slate-400 pl-1">
+              <li>Open Google Firebase Console at <a href="https://console.firebase.google.com" target="_blank" class="link underline font-medium">console.firebase.google.com</a>.</li>
+              <li>Sign in with your Google Account and click <b>Create a project</b> (or <b>Add project</b>).</li>
+              <li>Enter a project name (e.g., <code class="mono text-slate-200">my-pos-store</code>), choose your analytics preferences, and click <b>Create project</b>.</li>
+            </ol>
+          </div>
+
+          <div class="rounded-xl surface2 border hairline p-3.5">
+            <div class="font-bold text-sm text-[rgb(var(--acc-rgb))] mb-1 flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-[rgb(var(--acc-rgb)/.2)] text-[rgb(var(--acc-rgb))] grid place-items-center text-xs">2</span>
+              Enable Email &amp; Password Authentication
+            </div>
+            <ol class="list-decimal list-inside space-y-1 text-slate-400 pl-1">
+              <li>In your Firebase project sidebar, click <b>Build &rarr; Authentication</b>.</li>
+              <li>Click <b>Get started</b> &rarr; select the <b>Sign-in method</b> tab.</li>
+              <li>Click <b>Email/Password</b>, toggle <b>Enable</b>, and click <b>Save</b>.</li>
+              <li>Under the <b>Settings</b> tab &rarr; <b>Authorized domains</b>, ensure your app domain is listed (or add it if testing on custom domain).</li>
+            </ol>
+          </div>
+
+          <div class="rounded-xl surface2 border hairline p-3.5">
+            <div class="font-bold text-sm text-[rgb(var(--acc-rgb))] mb-1 flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-[rgb(var(--acc-rgb)/.2)] text-[rgb(var(--acc-rgb))] grid place-items-center text-xs">3</span>
+              Create Cloud Firestore Database
+            </div>
+            <ol class="list-decimal list-inside space-y-1 text-slate-400 pl-1">
+              <li>In the Firebase sidebar, click <b>Build &rarr; Firestore Database</b>.</li>
+              <li>Click <b>Create database</b>. Choose your cloud region (e.g. <code class="mono text-slate-200">asia-south1</code> or closest).</li>
+              <li>Choose <b>Start in test mode</b> for quick setup, or <b>production mode</b> with the recommended security rules below.</li>
+            </ol>
+          </div>
+
+          <div class="rounded-xl surface2 border hairline p-3.5">
+            <div class="font-bold text-sm text-[rgb(var(--acc-rgb))] mb-1 flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-[rgb(var(--acc-rgb)/.2)] text-[rgb(var(--acc-rgb))] grid place-items-center text-xs">4</span>
+              Get your Web App Configuration JSON
+            </div>
+            <p class="text-slate-400 mb-2">Click the gear icon <i class="fa-solid fa-gear"></i> &rarr; <b>Project settings</b> &rarr; scroll to <b>Your apps</b> &rarr; click Web icon <code class="mono">&lt;/&gt;</code> &rarr; register app. Copy the <code class="mono">firebaseConfig</code> object:</p>
+            <div class="surface border hairline rounded-lg p-2.5 font-mono text-[11px] text-amber-500 select-all overflow-x-auto leading-relaxed">
+{
+  "apiKey": "AIzaSyB...",
+  "authDomain": "my-pos-store.firebaseapp.com",
+  "projectId": "my-pos-store",
+  "storageBucket": "my-pos-store.appspot.com",
+  "messagingSenderId": "1234567890",
+  "appId": "1:1234567890:web:abcd1234"
+}
+            </div>
+          </div>
+
+          <div class="rounded-xl surface2 border hairline p-3.5">
+            <div class="font-bold text-sm text-[rgb(var(--acc-rgb))] mb-1 flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-[rgb(var(--acc-rgb)/.2)] text-[rgb(var(--acc-rgb))] grid place-items-center text-xs">5</span>
+              Connect in App Settings
+            </div>
+            <p class="text-slate-400 leading-relaxed">
+              Navigate to <b>Settings &rarr; Cloud sync (Firebase)</b>. Paste the JSON into the <b>Firebase config</b> box, click <b>Connect</b>, then use <b>Create account / Sign in</b>. Once connected, your store badge updates to live cloud sync!
+            </p>
+          </div>
+        </div>
+      </div>`,
+      `<button class="btn btn-ghost" onclick="UI.closeModal(this)">Close</button>
+       <button class="btn btn-soft" onclick="Admin.showFirebaseRules()"><i class="fa-solid fa-code"></i> Security Rules</button>
+       <button class="btn btn-accent" onclick="UI.closeModal(this);Nav.go('settings')"><i class="fa-solid fa-sliders"></i> Go to Settings</button>`,
+      { width: '46rem' });
+  },
+
+  showFirebaseRules() {
+    const rules = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Single-user store model: allow read/write to authenticated store owner
+    match /tenants/{tenantId}/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}`;
+    UI.open('Recommended Firestore Security Rules', `
+      <div class="space-y-3 text-xs">
+        <p class="text-slate-400">Copy and paste these rules into <b>Firebase Console &rarr; Firestore Database &rarr; Rules tab</b> &rarr; click <b>Publish</b>:</p>
+        <div class="surface border hairline rounded-xl p-3 font-mono text-[11px] text-emerald-500 select-all overflow-x-auto whitespace-pre leading-relaxed">${esc(rules)}</div>
+        <p class="text-[11px] text-slate-500">These rules ensure only logged-in store owners and authorized devices can read or write POS orders and customer catalog entries.</p>
+      </div>`,
+      `<button class="btn btn-ghost" onclick="UI.closeModal(this)">Close</button>
+       <button class="btn btn-accent" onclick="navigator.clipboard.writeText(\`${rules.replace(/`/g, '\\`')}\`);toast('Rules copied to clipboard','ok')"><i class="fa-solid fa-copy"></i> Copy Rules</button>`,
+      { width: '38rem' });
+  },
+
   help() {
     UI.open('Sign-in &amp; demo guide', `
       <div class="space-y-3 text-[13px] leading-relaxed">
