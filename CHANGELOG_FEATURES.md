@@ -93,3 +93,25 @@ This document outlines all feature enhancements, bug fixes, UI adjustments, and 
   - **`UI.closeModal()` Null-Safety**: Fixed `TypeError: Cannot read properties of undefined (reading 'closest')`. `UI.closeModal(el)` now gracefully detects when `el` is undefined and defaults to removing the topmost modal backdrop (`.mask:last-child` / `.mask`), allowing programmatic closures like `Demand.openOrder(oid)`.
   - **Router Delegation & Compatibility**: Fixed `ReferenceError: App is not defined` when triggering `Demand.orderFiltered()` or individual demand item `Demand.orderItem()`. Replaced direct references with `Nav.go('order')` and installed a global fallback bridge (`window.App = { go: (id) => Nav.go(id) }`).
 
+---
+
+## 10. Low Stock Alert Threshold & Visual Warning Badges
+- **What was changed**:
+  - **Configurable Low Stock Threshold**:
+    - Added an inline, interactive threshold input on the **Products toolbar** (`#prodThresholdInput`) with live visual update and persistence.
+    - Added a dedicated **Inventory & Stock Alerts** configuration card in **Settings** (`#setLowStockThreshold`) to set the workspace global default threshold (defaults to 10).
+    - Added support for per-product threshold overrides (`p.threshold`) inside the **Product Form** (`#pfThreshold`), defaulting to the workspace threshold if unspecified.
+  - **Visual Warning Badges & Table Row Indicators**:
+    - **Out of Stock**: Red indicator badge `<span class="bg-red-500/15 text-red-600 ..."><i class="fa-solid fa-circle-xmark"></i> Out of Stock</span>`, bold red stock count, warning icon next to the product name, and red accented row highlight.
+    - **Low Stock**: Amber warning badge `<span class="bg-amber-500/15 text-amber-700 ..."><i class="fa-solid fa-triangle-exclamation"></i> Low Stock (<= X)</span>`, bold amber stock count, warning icon next to the product name, and amber row highlight.
+    - **In Stock**: Emerald status badge with checkmark and clean typography.
+  - **Low Stock Filter Toggle**:
+    - Added a quick filter button on the Products toolbar (`#btnLowStockFilter`) showing the real-time count badge of low-stock items. Clicking it toggles between displaying all products or only items falling below threshold.
+  - **Stock Health Analytics Card**:
+    - Added a sidebar widget displaying counts of Total Catalog Items, Low Stock Items, and Out of Stock Items, with 1-click filtering.
+  - **Instant Stock Adjustment**:
+    - Added an interactive quick-adjust stock modal (`Products.quickStock`) accessible via hover on any stock quantity cell, supporting `[-10] [-1] [+1] [+10]` quick buttons and direct numeric entry with live badge preview.
+  - **Export Integration**:
+    - Updated `Export.productsXlsx()` to include `Stock`, `Threshold`, and `Stock Status` columns in downloaded Excel workbooks.
+
+

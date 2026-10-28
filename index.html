@@ -824,6 +824,21 @@ function handleLogoUpload(input) {
                   <input id="prodFilter" class="field !pl-9" placeholder="Search product…" oninput="Products.render()">
                 </div>
                 <select id="prodCatFilter" class="field !w-auto" onchange="Products.render()"><option value="">All categories</option></select>
+
+                <!-- Configurable Low Stock Threshold -->
+                <div class="flex items-center gap-1.5 surface2 border hairline rounded-xl px-2.5 py-1 text-xs" title="Configurable threshold for low stock alert badges">
+                  <i class="fa-solid fa-triangle-exclamation text-amber-500 text-xs"></i>
+                  <span class="text-slate-600 dark:text-slate-300 font-semibold whitespace-nowrap">Threshold:</span>
+                  <input id="prodThresholdInput" type="number" min="0" step="1" class="w-14 px-1.5 py-0.5 rounded-lg border hairline bg-white dark:bg-slate-900 font-mono font-bold text-center text-xs outline-none focus:ring-1 focus:ring-amber-500" value="10" onchange="Products.updateThreshold(this.value)" oninput="Products.updateThresholdLive(this.value)" title="Change threshold value">
+                </div>
+
+                <!-- Filter Toggle: Low stock items only -->
+                <button id="btnLowStockFilter" class="btn btn-sm btn-ghost text-xs transition-all border hairline border-transparent" onclick="Products.toggleLowStockFilter()" title="Filter items below threshold">
+                  <i class="fa-solid fa-filter text-amber-500"></i>
+                  <span>Low stock</span>
+                  <span id="prodLowStockCount" class="pill bg-amber-500/20 text-amber-700 dark:text-amber-400 font-mono text-[10px] ml-1 font-bold">0</span>
+                </button>
+
                 <div class="flex-1"></div>
                 <button class="btn btn-accent btn-sm" onclick="Products.openForm()"><i class="fa-solid fa-plus"></i> Add</button>
                 <button class="btn btn-soft btn-sm" onclick="Import.products(this)"><i class="fa-solid fa-file-arrow-up"></i> Import</button>
@@ -834,13 +849,20 @@ function handleLogoUpload(input) {
             <div class="glass card overflow-hidden">
               <div class="tbl-wrap" style="max-height:64vh">
                 <table class="tbl">
-                  <thead><tr><th>Product</th><th>Category</th><th>Default unit</th><th class="text-right">Rate</th><th>Units</th><th style="width:110px">Actions</th></tr></thead>
+                  <thead><tr><th>Product</th><th>Category</th><th>Default unit</th><th class="text-right">Rate</th><th class="text-right">Stock</th><th class="text-center">Stock Warning / Status</th><th>Units</th><th style="width:110px">Actions</th></tr></thead>
                   <tbody id="productsBody"></tbody>
                 </table>
               </div>
             </div>
           </div>
           <div class="space-y-4">
+            <div class="glass card p-4">
+              <div class="font-bold mb-3 text-sm flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-boxes-stacked text-[rgb(var(--acc-rgb))]"></i> Stock health</span>
+                <span class="text-xs text-slate-400 font-normal">Threshold: <b id="sideThresholdLabel" class="mono font-bold text-amber-500">10</b></span>
+              </div>
+              <div id="stockHealthWidget" class="space-y-2.5"></div>
+            </div>
             <div class="glass card p-4">
               <div class="font-bold mb-3 text-sm flex items-center gap-2"><i class="fa-solid fa-layer-group text-[rgb(var(--acc-rgb))]"></i> Categories</div>
               <div class="flex gap-2 mb-3"><input id="newCat" class="field !py-1.5" placeholder="New category"><button class="btn btn-accent btn-sm" onclick="Products.addCat()"><i class="fa-solid fa-plus"></i></button></div>
@@ -937,6 +959,19 @@ function handleLogoUpload(input) {
                 <div class="font-extrabold mono text-lg text-[rgb(var(--acc-rgb))]" id="idPreview">—</div>
               </div>
               <button class="btn btn-accent mt-3" onclick="Settings.saveId()"><i class="fa-solid fa-floppy-disk"></i> Save numbering</button>
+            </div>
+
+            <div class="glass card p-5">
+              <div class="font-bold mb-3 flex items-center gap-2"><i class="fa-solid fa-boxes-stacked text-[rgb(var(--acc-rgb))]"></i> Inventory &amp; Stock Alerts</div>
+              <p class="text-[12px] text-slate-400 mb-3 leading-relaxed">Configure the default low stock threshold. Items with stock quantities at or below this value display warning badges and alert indicators in the Products catalog.</p>
+              <div>
+                <label class="lbl">Global low stock threshold</label>
+                <div class="relative">
+                  <input id="setLowStockThreshold" type="number" min="0" step="1" class="field mono font-bold" placeholder="10">
+                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono">units</span>
+                </div>
+              </div>
+              <button class="btn btn-accent mt-3" onclick="Settings.saveThreshold()"><i class="fa-solid fa-floppy-disk"></i> Save threshold</button>
             </div>
 
             <div class="glass card p-5">
@@ -1199,6 +1234,7 @@ const DEF_SETTINGS = {
   address: 'Plot 12, Azadpur Mandi, New Delhi — 110033', gstin: '07AAFCM1234K1Z5', logo: '',
   bankName: 'Mahavir Traders', bankAcc: '50200012345678', bankIfsc: 'HDFC0001234', upi: 'mahavirtraders@hdfcbank',
   prefix: 'MT', middle: 'ORD', counter: 1001, tax: 0, theme: 'dark', palette: 'indigo',
+  lowStockThreshold: 10,
   footer: 'Thank you for your business. Goods once sold will not be taken back.',
   /* Pre-provisioned Firebase project (order-flow-max). Clear the Cloud sync box in
      Settings to fall back to pure offline / IndexedDB mode. */
@@ -1538,29 +1574,29 @@ const Data = {
     }
 
     const prodSeed = [
-      ['Basmati Rice 1121', 'Grains & Pulses', 'KG', 118, ['KG', 'Quintal', 'Box']],
-      ['Wheat Flour (Sharbati)', 'Grains & Pulses', 'KG', 42, ['KG', 'Quintal']],
-      ['Toor Dal', 'Grains & Pulses', 'KG', 145, ['KG', 'Quintal', 'Packet']],
-      ['Chana Dal', 'Grains & Pulses', 'KG', 96, ['KG', 'Quintal']],
-      ['Turmeric Powder', 'Spices', 'KG', 210, ['KG', 'Gram', 'Box']],
-      ['Red Chilli Powder', 'Spices', 'KG', 265, ['KG', 'Gram', 'Box']],
-      ['Cumin Seeds', 'Spices', 'KG', 380, ['KG', 'Gram']],
-      ['Garam Masala Blend', 'Spices', 'Gram', 0.62, ['Gram', 'KG', 'Packet']],
-      ['Mustard Oil (Kachi)', 'Edible Oils', 'Litre', 132, ['Litre', 'Box', 'CTN']],
-      ['Refined Sunflower Oil', 'Edible Oils', 'Litre', 118, ['Litre', 'Box', 'CTN']],
-      ['Desi Ghee', 'Dairy', 'KG', 610, ['KG', 'Gram', 'Box']],
-      ['Full Cream Milk Packet', 'Dairy', 'Packet', 62, ['Packet', 'Box', 'CTN']],
-      ['Paneer Block', 'Dairy', 'KG', 340, ['KG', 'Gram']],
-      ['Cardboard Box 12x10', 'Packaging', 'Bundle', 480, ['Bundle', 'Packet']],
-      ['Stretch Wrap Roll', 'Packaging', 'Meter', 95, ['Meter', 'Box']],
-      ['PP Woven Sack 50kg', 'Packaging', 'Packet', 26, ['Packet', 'Bundle']],
-      ['Masala Tea 250g', 'Beverages', 'Packet', 155, ['Packet', 'Box', 'CTN']],
-      ['Mineral Water 1L', 'Beverages', 'CTN', 190, ['CTN', 'Box']],
-      ['Sugar (M-31)', 'Grains & Pulses', 'KG', 44, ['KG', 'Quintal']],
+      ['Basmati Rice 1121', 'Grains & Pulses', 'KG', 118, ['KG', 'Quintal', 'Box'], 85],
+      ['Wheat Flour (Sharbati)', 'Grains & Pulses', 'KG', 42, ['KG', 'Quintal'], 6],
+      ['Toor Dal', 'Grains & Pulses', 'KG', 145, ['KG', 'Quintal', 'Packet'], 45],
+      ['Chana Dal', 'Grains & Pulses', 'KG', 96, ['KG', 'Quintal'], 3],
+      ['Turmeric Powder', 'Spices', 'KG', 210, ['KG', 'Gram', 'Box'], 120],
+      ['Red Chilli Powder', 'Spices', 'KG', 265, ['KG', 'Gram', 'Box'], 0],
+      ['Cumin Seeds', 'Spices', 'KG', 380, ['KG', 'Gram'], 18],
+      ['Garam Masala Blend', 'Spices', 'Gram', 0.62, ['Gram', 'KG', 'Packet'], 8],
+      ['Mustard Oil (Kachi)', 'Edible Oils', 'Litre', 132, ['Litre', 'Box', 'CTN'], 65],
+      ['Refined Sunflower Oil', 'Edible Oils', 'Litre', 118, ['Litre', 'Box', 'CTN'], 2],
+      ['Desi Ghee', 'Dairy', 'KG', 610, ['KG', 'Gram', 'Box'], 30],
+      ['Full Cream Milk Packet', 'Dairy', 'Packet', 62, ['Packet', 'Box', 'CTN'], 0],
+      ['Paneer Block', 'Dairy', 'KG', 340, ['KG', 'Gram'], 24],
+      ['Cardboard Box 12x10', 'Packaging', 'Bundle', 480, ['Bundle', 'Packet'], 9],
+      ['Stretch Wrap Roll', 'Packaging', 'Meter', 95, ['Meter', 'Box'], 50],
+      ['PP Woven Sack 50kg', 'Packaging', 'Packet', 26, ['Packet', 'Bundle'], 140],
+      ['Masala Tea 250g', 'Beverages', 'Packet', 155, ['Packet', 'Box', 'CTN'], 5],
+      ['Mineral Water 1L', 'Beverages', 'CTN', 190, ['CTN', 'Box'], 40],
+      ['Sugar (M-31)', 'Grains & Pulses', 'KG', 44, ['KG', 'Quintal'], 12],
     ];
     const prods = [];
-    for (const [name, cat, unit, rate, us] of prodSeed) {
-      const p = { id: uid(), pid: 'P' + Math.floor(Math.random() * 9000 + 1000), name, category: cat, unit, rate, units: us.map(u => ({ name: u, rate: u === unit ? rate : Math.round(rate * (u === 'Gram' ? 1 : u === 'Quintal' ? 100 : u === 'CTN' ? 12 : u === 'Box' ? 10 : u === 'Bundle' ? 20 : u === 'Dozen' ? 12 : 1) * 100) / 100 })), updatedAt: Date.now() };
+    for (const [name, cat, unit, rate, us, st] of prodSeed) {
+      const p = { id: uid(), pid: 'P' + Math.floor(Math.random() * 9000 + 1000), name, category: cat, unit, rate, stock: st !== undefined ? st : 20, units: us.map(u => ({ name: u, rate: u === unit ? rate : Math.round(rate * (u === 'Gram' ? 1 : u === 'Quintal' ? 100 : u === 'CTN' ? 12 : u === 'Box' ? 10 : u === 'Bundle' ? 20 : u === 'Dozen' ? 12 : 1) * 100) / 100 })), updatedAt: Date.now() };
       prods.push(p); await db.products.put(p);
     }
 
@@ -2693,25 +2729,179 @@ const Customers = {
 
 /* ---------------------------------- Products ---------------------------------- */
 const Products = {
+  _stockFilter: null, // null | 'low' | 'out'
+
+  getThreshold(p) {
+    if (p && p.threshold != null && p.threshold !== '') {
+      const v = Number(p.threshold);
+      if (!isNaN(v) && v >= 0) return v;
+    }
+    const def = S.settings.lowStockThreshold;
+    return (def != null && def !== '' && !isNaN(Number(def))) ? Number(def) : 10;
+  },
+
   filtered() {
     const q = ($('#prodFilter') ? $('#prodFilter').value : '').toLowerCase().trim();
     const cat = $('#prodCatFilter') ? $('#prodCatFilter').value : '';
-    return S.products.filter(p => (!cat || p.category === cat) && (!q || (p.name + ' ' + p.category).toLowerCase().includes(q)));
+    return S.products.filter(p => {
+      if (cat && p.category !== cat) return false;
+      if (q && !(p.name + ' ' + (p.category || '') + ' ' + (p.pid || '')).toLowerCase().includes(q)) return false;
+      const st = Number(p.stock) || 0;
+      const th = Products.getThreshold(p);
+      if (Products._stockFilter === 'low') return st <= th;
+      if (Products._stockFilter === 'out') return st <= 0;
+      return true;
+    });
   },
+
+  async updateThreshold(val) {
+    const numVal = Math.max(0, parseInt(val, 10) || 0);
+    S.settings.lowStockThreshold = numVal;
+    await Settings.persist();
+    Products.render();
+    toast(`Stock threshold set to ${numVal}`, 'ok');
+  },
+
+  updateThresholdLive(val) {
+    const numVal = Math.max(0, parseInt(val, 10) || 0);
+    S.settings.lowStockThreshold = numVal;
+    Products.render();
+  },
+
+  toggleLowStockFilter() {
+    Products._stockFilter = Products._stockFilter === 'low' ? null : 'low';
+    Products.render();
+  },
+
+  filterOutOnly() {
+    Products._stockFilter = Products._stockFilter === 'out' ? null : 'out';
+    Products.render();
+  },
+
+  clearStockFilter() {
+    Products._stockFilter = null;
+    Products.render();
+  },
+
   render() {
     const cats = S.categories.map(c => c.name);
-    const pf = $('#prodCatFilter'); const cur = pf.value;
-    pf.innerHTML = `<option value="">All categories</option>` + cats.map(c => `<option${c === cur ? ' selected' : ''}>${esc(c)}</option>`).join('');
-    $('#productsBody').innerHTML = Products.filtered().map(p => `<tr>
-      <td class="font-semibold">${esc(p.name)}<div class="text-[10px] text-slate-400 mono">${esc(p.pid || '')}</div></td>
-      <td><span class="pill bg-[rgb(var(--acc-rgb)/.1)] text-[rgb(var(--acc-rgb))]">${esc(p.category || '—')}</span></td>
-      <td class="mono">${esc(p.unit || '—')}</td>
-      <td class="text-right mono font-bold">${money(p.rate)}</td>
-      <td><div class="flex flex-wrap gap-1">${(p.units || []).map(u => `<span class="pill surface2 border hairline text-slate-500">${esc(u.name)} <span class="mono opacity-70">${money(u.rate)}</span></span>`).join('') || '<span class="text-slate-400 text-xs">—</span>'}</div></td>
-      <td><div class="flex gap-1">
-        <button class="w-8 h-8 rounded-lg btn-ghost grid place-items-center" onclick="Products.openForm('${p.id}')"><i class="fa-solid fa-pen text-xs"></i></button>
-        <button class="w-8 h-8 rounded-lg btn-ghost grid place-items-center hover:!text-red-500" onclick="Products.del('${p.id}')"><i class="fa-solid fa-trash text-xs"></i></button>
-      </div></td></tr>`).join('') || `<tr><td colspan="6"><div class="text-center py-14 text-slate-400"><i class="fa-solid fa-tags text-3xl block mb-2 opacity-40"></i>No products yet</div></td></tr>`;
+    const pf = $('#prodCatFilter'); const cur = pf ? pf.value : '';
+    if (pf) {
+      pf.innerHTML = `<option value="">All categories</option>` + cats.map(c => `<option${c === cur ? ' selected' : ''}>${esc(c)}</option>`).join('');
+    }
+
+    const globalTh = Products.getThreshold();
+    const thInput = $('#prodThresholdInput');
+    if (thInput && document.activeElement !== thInput) {
+      thInput.value = globalTh;
+    }
+    const sideTh = $('#sideThresholdLabel');
+    if (sideTh) sideTh.textContent = globalTh;
+
+    const lowCount = S.products.filter(p => (Number(p.stock) || 0) <= Products.getThreshold(p)).length;
+    const outCount = S.products.filter(p => (Number(p.stock) || 0) <= 0).length;
+    const totalCount = S.products.length;
+
+    const lowBadge = $('#prodLowStockCount');
+    if (lowBadge) lowBadge.textContent = lowCount;
+
+    const filterBtn = $('#btnLowStockFilter');
+    if (filterBtn) {
+      const active = Products._stockFilter === 'low';
+      filterBtn.classList.toggle('!bg-amber-500/20', active);
+      filterBtn.classList.toggle('!text-amber-700', active);
+      filterBtn.classList.toggle('dark:!text-amber-300', active);
+      filterBtn.classList.toggle('!border-amber-500/50', active);
+    }
+
+    $('#productsBody').innerHTML = Products.filtered().map(p => {
+      const th = Products.getThreshold(p);
+      const stock = Number(p.stock) || 0;
+      const isOut = stock <= 0;
+      const isLow = stock > 0 && stock <= th;
+
+      let rowCls = 'group transition-colors';
+      let badgeHtml = '';
+
+      if (isOut) {
+        rowCls += ' bg-red-500/[0.04] dark:bg-red-950/[0.14] border-l-4 border-l-red-500 hover:bg-red-500/[0.08]';
+        badgeHtml = `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 whitespace-nowrap shadow-sm shadow-red-500/10">
+            <i class="fa-solid fa-circle-xmark text-[10px]"></i> Out of Stock
+          </span>`;
+      } else if (isLow) {
+        rowCls += ' bg-amber-500/[0.04] dark:bg-amber-950/[0.14] border-l-4 border-l-amber-500 hover:bg-amber-500/[0.08]';
+        badgeHtml = `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/35 whitespace-nowrap shadow-sm shadow-amber-500/10" title="Current stock (${stock}) is at or below threshold (${th})">
+            <i class="fa-solid fa-triangle-exclamation text-[10px] text-amber-500"></i> Low Stock (&le;${th})
+          </span>`;
+      } else {
+        rowCls += ' border-l-4 border-l-transparent hover:bg-slate-500/[0.03]';
+        badgeHtml = `
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+            <i class="fa-solid fa-check text-[10px]"></i> In Stock
+          </span>`;
+      }
+
+      return `<tr class="${rowCls}">
+        <td class="font-semibold">
+          <div class="flex items-center gap-1.5">
+            <span class="truncate">${esc(p.name)}</span>
+            ${isOut ? `<span class="text-red-500 shrink-0 text-xs" title="Out of stock"><i class="fa-solid fa-circle-exclamation"></i></span>` : (isLow ? `<span class="text-amber-500 shrink-0 text-xs" title="Low stock warning: ${stock} &le; ${th}"><i class="fa-solid fa-triangle-exclamation"></i></span>` : '')}
+          </div>
+          <div class="text-[10px] text-slate-400 mono flex items-center gap-2">
+            <span>${esc(p.pid || '')}</span>
+            ${p.threshold != null ? `<span class="px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 text-[9px]">Threshold: ${p.threshold}</span>` : ''}
+          </div>
+        </td>
+        <td><span class="pill bg-[rgb(var(--acc-rgb)/.1)] text-[rgb(var(--acc-rgb))]">${esc(p.category || '—')}</span></td>
+        <td class="mono">${esc(p.unit || '—')}</td>
+        <td class="text-right mono font-bold">${money(p.rate)}</td>
+        <td class="text-right">
+          <div class="inline-flex items-center gap-1.5 justify-end">
+            <span class="mono font-bold text-sm ${isOut ? 'text-red-600 dark:text-red-400' : (isLow ? 'text-amber-600 dark:text-amber-400 font-extrabold' : 'text-slate-800 dark:text-slate-100')}">${stock}</span>
+            <span class="text-[10px] text-slate-400 mono">${esc(p.unit || '')}</span>
+            <button class="w-6 h-6 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity" onclick="Products.quickStock('${p.id}')" title="Adjust stock quantity"><i class="fa-solid fa-pen-to-square text-[10px]"></i></button>
+          </div>
+        </td>
+        <td class="text-center">${badgeHtml}</td>
+        <td><div class="flex flex-wrap gap-1">${(p.units || []).map(u => `<span class="pill surface2 border hairline text-slate-500">${esc(u.name)} <span class="mono opacity-70">${money(u.rate)}</span></span>`).join('') || '<span class="text-slate-400 text-xs">—</span>'}</div></td>
+        <td><div class="flex gap-1">
+          <button class="w-8 h-8 rounded-lg btn-ghost grid place-items-center" onclick="Products.openForm('${p.id}')" title="Edit product"><i class="fa-solid fa-pen text-xs"></i></button>
+          <button class="w-8 h-8 rounded-lg btn-ghost grid place-items-center hover:!text-red-500" onclick="Products.del('${p.id}')" title="Delete product"><i class="fa-solid fa-trash text-xs"></i></button>
+        </div></td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="8"><div class="text-center py-14 text-slate-400"><i class="fa-solid fa-boxes-stacked text-3xl block mb-2 opacity-40"></i>No products match filter</div></td></tr>`;
+
+    // Stock Health Widget
+    const widget = $('#stockHealthWidget');
+    if (widget) {
+      widget.innerHTML = `
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="surface2 border hairline rounded-xl p-2 cursor-pointer hover:border-slate-400 transition-all ${Products._stockFilter === null ? 'ring-1 ring-slate-400' : ''}" onclick="Products.clearStockFilter()" title="Show all items">
+            <div class="text-[9px] uppercase tracking-wider font-bold text-slate-400">Total</div>
+            <div class="mono font-extrabold text-base text-slate-700 dark:text-slate-200">${totalCount}</div>
+          </div>
+          <div class="surface2 border hairline rounded-xl p-2 cursor-pointer hover:border-amber-500 transition-all ${Products._stockFilter === 'low' ? 'ring-2 ring-amber-500 bg-amber-500/10' : ''}" onclick="Products.toggleLowStockFilter()" title="Filter items below threshold">
+            <div class="text-[9px] uppercase tracking-wider font-bold text-amber-500">Low stock</div>
+            <div class="mono font-extrabold text-base text-amber-500">${lowCount}</div>
+          </div>
+          <div class="surface2 border hairline rounded-xl p-2 cursor-pointer hover:border-red-500 transition-all ${Products._stockFilter === 'out' ? 'ring-2 ring-red-500 bg-red-500/10' : ''}" onclick="Products.filterOutOnly()" title="Filter out of stock items">
+            <div class="text-[9px] uppercase tracking-wider font-bold text-red-500">Out</div>
+            <div class="mono font-extrabold text-base text-red-500">${outCount}</div>
+          </div>
+        </div>
+        ${lowCount > 0 ? `
+          <div class="text-[11px] text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 flex items-start gap-2">
+            <i class="fa-solid fa-triangle-exclamation shrink-0 mt-0.5"></i>
+            <div class="leading-tight"><b>${lowCount} items</b> at or below threshold (&le;${globalTh}). Review stock before ordering.</div>
+          </div>` : `
+          <div class="text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2.5 flex items-center gap-2">
+            <i class="fa-solid fa-circle-check"></i>
+            <div>All products are above threshold (${globalTh}).</div>
+          </div>`}
+      `;
+    }
 
     $('#catList').innerHTML = S.categories.map(c => {
       const n = S.products.filter(p => p.category === c.name).length;
@@ -2755,6 +2945,7 @@ const Products = {
         ${areaRows.map(([k, v]) => `<div class="flex justify-between text-xs py-.5"><span class="truncate">${esc(k)}</span><span class="mono font-bold">${moneyShort(v.amt)} <span class="text-slate-400 font-normal">(${v.n})</span></span></div>`).join('') || '<div class="text-xs text-slate-400">No sales data</div>'}
       </div>`;
   },
+
   async addCat() {
     const name = $('#newCat').value.trim();
     if (!name) return toast('Enter a category name', 'warn');
@@ -2798,10 +2989,14 @@ const Products = {
     await Data.refresh();
     toast(`Unit “${u.name}” removed`, 'warn');
   },
+
   openForm(id) {
     const p = id ? S.products.find(x => x.id === id) : null;
     const units = S.units.map(u => u.name);
     const cats = S.categories.map(c => c.name);
+    const curStock = p && p.stock != null ? num(p.stock) : 0;
+    const globalTh = Products.getThreshold();
+    const curTh = p && p.threshold != null ? p.threshold : '';
     UI.open(p ? 'Edit product' : 'New product', `
       <div class="grid sm:grid-cols-2 gap-3">
         <div class="sm:col-span-2"><label class="lbl">Product name *</label><input id="pfName" class="field" value="${esc(p ? p.name : '')}" placeholder="Basmati Rice 1121"></div>
@@ -2813,6 +3008,10 @@ const Products = {
           <datalist id="unitList2">${units.map(u => `<option value="${esc(u)}">`).join('')}</datalist></div>
         <div><label class="lbl">Base rate</label><input id="pfRate" type="number" step="any" class="field mono" value="${p ? num(p.rate) : 0}"></div>
         <div><label class="lbl">Product code</label><input id="pfPid" class="field mono" value="${esc(p ? (p.pid || '') : 'P' + Math.floor(Math.random() * 9000 + 1000))}"></div>
+        <div><label class="lbl">Current stock quantity</label><input id="pfStock" type="number" step="any" class="field mono font-bold" value="${curStock}"></div>
+        <div><label class="lbl">Custom warning threshold <span class="text-slate-400 font-normal">(optional, default: ${globalTh})</span></label>
+          <input id="pfThreshold" type="number" min="0" step="1" class="field mono" placeholder="Default (${globalTh})" value="${curTh}">
+        </div>
       </div>
       <div class="mt-4">
         <div class="flex items-center justify-between mb-2">
@@ -2838,6 +3037,7 @@ const Products = {
   addUnitRow() { S._pfUnits.push({ name: S.units[0]?.name || 'Unit', rate: 0 }); Products.renderUnitRows(); },
   setUnitRow(i, k, v) { S._pfUnits[i][k] = k === 'rate' ? num(v) : v; },
   delUnitRow(i) { S._pfUnits.splice(i, 1); Products.renderUnitRows(); },
+
   async save(id) {
     const name = $('#pfName').value.trim();
     if (!name) return toast('Product name is required', 'warn');
@@ -2846,13 +3046,26 @@ const Products = {
     if (unit && !S.units.some(u => u.name === unit)) { await Data.put('units', { id: uid(), name: unit }); }
     const rec = id ? S.products.find(x => x.id === id) : { id: uid() };
     const units = (S._pfUnits || []).filter(u => u.name);
-    Object.assign(rec, { name, category: cat, unit: unit || (units[0] && units[0].name) || 'Unit', rate, units: units.length ? units : [{ name: unit || 'Unit', rate }], pid: $('#pfPid').value.trim() });
+    const stock = num($('#pfStock').value);
+    const thRaw = $('#pfThreshold').value.trim();
+    const threshold = thRaw !== '' ? Math.max(0, parseInt(thRaw, 10)) : null;
+    Object.assign(rec, {
+      name,
+      category: cat,
+      unit: unit || (units[0] && units[0].name) || 'Unit',
+      rate,
+      stock,
+      threshold,
+      units: units.length ? units : [{ name: unit || 'Unit', rate }],
+      pid: $('#pfPid').value.trim()
+    });
     await Data.put('products', rec);
     await Data.refresh();
     $$('.mask').forEach(m => m.remove());
-    Admin.log(id ? 'product.update' : 'product.create', `${name} · ${cat || '—'}`);
+    Admin.log(id ? 'product.update' : 'product.create', `${name} · Stock: ${stock} · ${cat || '—'}`);
     toast(id ? 'Product updated' : 'Product added', 'ok');
   },
+
   async del(id) {
     const p = S.products.find(x => x.id === id);
     if (!await UI.confirm('Delete product?', `“${esc(p.name)}” will be removed from the catalog. Existing orders keep their line items.`)) return;
@@ -2860,6 +3073,77 @@ const Products = {
     await Data.refresh();
     Admin.log('product.delete', p.name);
     toast('Product deleted', 'warn');
+  },
+
+  quickStock(id) {
+    const p = S.products.find(x => x.id === id);
+    if (!p) return;
+    const th = Products.getThreshold(p);
+    const curStock = Number(p.stock) || 0;
+    UI.open(`Adjust stock — ${esc(p.name)}`, `
+      <div class="space-y-4">
+        <div class="surface2 border hairline rounded-xl p-3 flex items-center justify-between">
+          <div>
+            <div class="text-[11px] text-slate-400 font-medium">Product / Unit</div>
+            <div class="font-bold text-sm">${esc(p.name)}</div>
+          </div>
+          <div class="text-right">
+            <div class="text-[11px] text-slate-400 font-medium">Threshold</div>
+            <div class="mono font-bold text-xs text-amber-500">${th} ${esc(p.unit || '')}</div>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">Quantity in stock</label>
+          <div class="flex items-center gap-2">
+            <button class="btn btn-soft w-10 h-10 p-0 text-base font-bold shrink-0" onclick="Products._adjustStockInput(-10)">-10</button>
+            <button class="btn btn-soft w-10 h-10 p-0 text-base font-bold shrink-0" onclick="Products._adjustStockInput(-1)">-1</button>
+            <input id="quickStockInput" type="number" step="any" class="field mono text-center font-extrabold text-xl flex-1 !py-2" value="${curStock}">
+            <button class="btn btn-soft w-10 h-10 p-0 text-base font-bold shrink-0" onclick="Products._adjustStockInput(1)">+1</button>
+            <button class="btn btn-soft w-10 h-10 p-0 text-base font-bold shrink-0" onclick="Products._adjustStockInput(10)">+10</button>
+          </div>
+        </div>
+        <div id="quickStockPreview" class="text-xs text-center"></div>
+      </div>`,
+      `<button class="btn btn-ghost" onclick="UI.closeModal(this)">Cancel</button>
+       <button class="btn btn-accent" onclick="Products.saveQuickStock('${p.id}')"><i class="fa-solid fa-floppy-disk"></i> Save stock</button>`,
+      { width: '26rem' });
+    Products._updateQuickPreview(curStock, th, p.unit || '');
+    const inp = $('#quickStockInput');
+    if (inp) {
+      inp.oninput = () => Products._updateQuickPreview(Number(inp.value) || 0, th, p.unit || '');
+    }
+  },
+
+  _adjustStockInput(delta) {
+    const inp = $('#quickStockInput');
+    if (!inp) return;
+    const cur = Number(inp.value) || 0;
+    inp.value = Math.max(0, cur + delta);
+    inp.dispatchEvent(new Event('input'));
+  },
+
+  _updateQuickPreview(val, th, unit) {
+    const prev = $('#quickStockPreview');
+    if (!prev) return;
+    if (val <= 0) {
+      prev.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20"><i class="fa-solid fa-circle-xmark"></i> Out of stock (0 ${esc(unit)})</span>`;
+    } else if (val <= th) {
+      prev.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/20"><i class="fa-solid fa-triangle-exclamation"></i> Low stock (${val} ${esc(unit)} &le; threshold ${th})</span>`;
+    } else {
+      prev.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"><i class="fa-solid fa-check"></i> In stock (${val} ${esc(unit)} &gt; threshold ${th})</span>`;
+    }
+  },
+
+  async saveQuickStock(id) {
+    const p = S.products.find(x => x.id === id);
+    if (!p) return;
+    const val = Math.max(0, Number($('#quickStockInput').value) || 0);
+    p.stock = val;
+    p.updatedAt = Date.now();
+    await Data.put('products', p);
+    await Data.refresh();
+    UI.closeModal();
+    toast(`Stock updated: ${p.name} = ${val} ${p.unit || ''}`, 'ok');
   },
 };
 
@@ -3339,8 +3623,23 @@ const Export = {
     toast('Product import template downloaded', 'ok');
   },
   productsXlsx() {
-    const ws = XLSX.utils.json_to_sheet(S.products.map(p => ({ Name: p.name, Category: p.category, Unit: p.unit, Rate: num(p.rate), Units: (p.units || []).map(u => `${u.name}@${u.rate}`).join(', ') })));
-    ws['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 10 }, { wch: 10 }, { wch: 40 }];
+    const ws = XLSX.utils.json_to_sheet(S.products.map(p => {
+      const stock = num(p.stock);
+      const th = Products.getThreshold(p);
+      const status = stock <= 0 ? 'Out of Stock' : (stock <= th ? 'Low Stock' : 'In Stock');
+      return {
+        'Product Code': p.pid || '',
+        'Name': p.name,
+        'Category': p.category,
+        'Unit': p.unit,
+        'Rate': num(p.rate),
+        'Stock': stock,
+        'Threshold': th,
+        'Stock Status': status,
+        'Units': (p.units || []).map(u => `${u.name}@${u.rate}`).join(', ')
+      };
+    }));
+    ws['!cols'] = [{ wch: 12 }, { wch: 30 }, { wch: 20 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 40 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Products');
     Export.download(wb, `products-${isoDate(Date.now())}.xlsx`);
@@ -3756,11 +4055,21 @@ const Settings = {
     set('#setBankName', s.bankName); set('#setBankAcc', s.bankAcc); set('#setBankIfsc', s.bankIfsc); set('#setUpi', s.upi);
     set('#setPrefix', s.prefix); set('#setMiddle', s.middle); set('#setCounter', s.counter);
     set('#setFb', s.fbConfig || '');
+    set('#setLowStockThreshold', s.lowStockThreshold != null ? s.lowStockThreshold : 10);
     const t = $('#setTenant'); if (t) t.textContent = S.storeId;
     Settings.previewId();
   },
   previewId() {
     $('#idPreview').textContent = `${$('#setPrefix').value || 'MT'}-${$('#setMiddle').value || 'ORD'}-${$('#setCounter').value || 1001}`;
+  },
+  async saveThreshold() {
+    const val = Math.max(0, parseInt($('#setLowStockThreshold').value, 10) || 0);
+    S.settings.lowStockThreshold = val;
+    await Settings.persist();
+    if ($('#prodThresholdInput')) $('#prodThresholdInput').value = val;
+    if (Nav.current === 'products') Products.render();
+    Admin.log('settings.inventory', `Low stock threshold set to ${val}`);
+    toast(`Stock threshold updated to ${val}`, 'ok');
   },
   async save() {
     Object.assign(S.settings, {
